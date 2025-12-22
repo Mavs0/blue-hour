@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Evento {
+  id          String   @id @default(cuid())
+  nome        String
+  descricao   String?
+  data        DateTime
+  local       String
+  cidade      String   @default("Manaus")
+  imagemUrl   String?
+  ativo       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  ingressos   Ingresso[]
+  
+  @@map("eventos")
+}
+
+model Ingresso {
+  id          String   @id @default(cuid())
+  eventoId    String
+  tipo        String   // Ex: "Pista", "VIP", "Camarote"
+  preco       Float
+  quantidade  Int      @default(0)
+  vendidos    Int      @default(0)
+  ativo       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  evento      Evento   @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  vendas      Venda[]
+  
+  @@map("ingressos")
+}
+
+model Cliente {
+  id          String   @id @default(cuid())
+  nome        String
+  email       String   @unique
+  telefone    String?
+  cpf         String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  vendas      Venda[]
+  
+  @@map("clientes")
+}
+
+model Venda {
+  id          String   @id @default(cuid())
+  clienteId   String
+  ingressoId  String
+  quantidade  Int
+  valorTotal  Float
+  status      String   @default("pendente") // pendente, confirmada, cancelada
+  codigo      String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  cliente     Cliente  @relation(fields: [clienteId], references: [id])
+  ingresso    Ingresso @relation(fields: [ingressoId], references: [id])
+  
+  @@map("vendas")
+}
+
