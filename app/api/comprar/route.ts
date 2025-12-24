@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { compraIngressoSchema } from "@/lib/validations";
+import {
+  gerarCodigoPix,
+  gerarCodigoBarras,
+  processarPagamentoCartao,
+} from "@/lib/pagamento";
+import {
+  criarNotificacaoCompra,
+  criarNotificacaoPagamento,
+  criarNotificacaoPagamentoPendente,
+} from "@/lib/notificacoes";
 import { randomBytes } from "crypto";
+
+// Forçar rota dinâmica para evitar coleta de dados estáticos durante o build
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,6 +73,66 @@ export async function POST(request: NextRequest) {
     // Gerar código único para a venda
     const codigo = `BLUE-${randomBytes(4).toString("hex").toUpperCase()}`;
 
+    // Processar pagamento baseado na forma escolhida
+    let statusPagamento = "pendente";
+    let codigoPagamento: string | null = null;
+    let qrCodePix: string | null = null;
+    let vencimentoBoleto: Date | null = null;
+    let dadosCartaoSalvos: string | null = null;
+
+    if (
+      dadosValidados.formaPagamento === "cartao_credito" ||
+      dadosValidados.formaPagamento === "cartao_debito"
+    ) {
+      // Processar pagamento com cartão
+      if (
+        dadosValidados.numeroCartao &&
+        dadosValidados.nomeCartao &&
+        dadosValidados.validadeCartao &&
+        dadosValidados.cvvCartao
+      ) {
+        const resultado = await processarPagamentoCartao(
+          {
+            numero: dadosValidados.numeroCartao,
+            nome: dadosValidados.nomeCartao,
+            validade: dadosValidados.validadeCartao,
+            cvv: dadosValidados.cvvCartao,
+          },
+          valorTotal,
+          dadosValidados.formaPagamento === "cartao_credito"
+            ? "credito"
+            : "debito"
+        );
+
+        if (resultado.sucesso && resultado.transacaoId) {
+          statusPagamento = "confirmado";
+          codigoPagamento = resultado.transacaoId;
+          // Salvar apenas últimos 4 dígitos e bandeira (não salvar dados completos)
+          dadosCartaoSalvos = JSON.stringify({
+            ultimosDigitos: dadosValidados.numeroCartao.slice(-4),
+            bandeira: "Cartão",
+          });
+        } else {
+          return NextResponse.json(
+            { error: resultado.erro || "Erro ao processar pagamento" },
+            { status: 400 }
+          );
+        }
+      }
+    } else if (dadosValidados.formaPagamento === "pix") {
+      // Gerar código PIX
+      codigoPagamento = gerarCodigoPix(valorTotal, codigo);
+      qrCodePix = codigoPagamento; // Em produção, gerar QR Code real
+      statusPagamento = "pendente";
+    } else if (dadosValidados.formaPagamento === "boleto") {
+      // Gerar boleto
+      const vencimento = new Date();
+      vencimento.setDate(vencimento.getDate() + 3); // 3 dias para vencer
+      codigoPagamento = gerarCodigoBarras(valorTotal, vencimento);
+      vencimentoBoleto = vencimento;
+      statusPagamento = "pendente";
+    }
+
     // Criar ou encontrar cliente (buscar por email ou CPF)
     let cliente = await prisma.cliente.findFirst({
       where: {
@@ -93,26 +167,61 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar venda
+    const dadosVenda: any = {
+      clienteId: cliente.id,
+      ingressoId: ingresso.id,
+      quantidade: dadosValidados.quantidade,
+      valorTotal,
+      formaPagamento: dadosValidados.formaPagamento || "pix",
+      status: statusPagamento === "confirmado" ? "confirmada" : "pendente",
+      codigo,
+      statusPagamento,
+      codigoPagamento: codigoPagamento || null,
+      qrCodePix: qrCodePix || null,
+      vencimentoBoleto: vencimentoBoleto || null,
+      dadosCartao: dadosCartaoSalvos || null,
+    };
+
     const venda = await prisma.venda.create({
-      data: {
-        clienteId: cliente.id,
-        ingressoId: ingresso.id,
-        quantidade: dadosValidados.quantidade,
-        valorTotal,
-        status: "confirmada",
-        codigo,
-      },
+      data: dadosVenda as any,
     });
 
-    // Atualizar quantidade de ingressos vendidos
-    await prisma.ingresso.update({
-      where: { id: ingresso.id },
-      data: {
-        vendidos: {
-          increment: dadosValidados.quantidade,
+    // Atualizar quantidade de ingressos vendidos apenas se pagamento confirmado
+    if (statusPagamento === "confirmado") {
+      await prisma.ingresso.update({
+        where: { id: ingresso.id },
+        data: {
+          vendidos: {
+            increment: dadosValidados.quantidade,
+          },
         },
-      },
-    });
+      });
+    }
+
+    // Criar notificações automaticamente
+    try {
+      if (statusPagamento === "confirmado") {
+        // Pagamento confirmado (cartão) - criar notificação de compra e pagamento
+        await criarNotificacaoCompra(cliente.id, codigo, evento.nome);
+        await criarNotificacaoPagamento(
+          cliente.id,
+          codigo,
+          dadosValidados.formaPagamento || "pix"
+        );
+      } else {
+        // Pagamento pendente (PIX ou Boleto) - criar notificação de compra e pagamento pendente
+        await criarNotificacaoCompra(cliente.id, codigo, evento.nome);
+        await criarNotificacaoPagamentoPendente(
+          cliente.id,
+          codigo,
+          dadosValidados.formaPagamento || "pix",
+          vencimentoBoleto || undefined
+        );
+      }
+    } catch (notificacaoError) {
+      // Não falhar a compra se houver erro ao criar notificação
+      console.error("Erro ao criar notificação:", notificacaoError);
+    }
 
     return NextResponse.json({
       success: true,
@@ -123,6 +232,11 @@ export async function POST(request: NextRequest) {
         quantidade: venda.quantidade,
         evento: evento.nome,
         ingresso: ingresso.tipo,
+        formaPagamento: dadosValidados.formaPagamento || "pix",
+        statusPagamento: statusPagamento,
+        codigoPagamento: codigoPagamento,
+        qrCodePix: qrCodePix,
+        vencimentoBoleto: vencimentoBoleto,
       },
     });
   } catch (error: any) {

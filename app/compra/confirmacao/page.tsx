@@ -79,6 +79,17 @@ async function ConfirmacaoContent({ codigo }: { codigo: string }) {
                   <span className="text-gray-600">Valor Unitário:</span>
                   <span>R$ {venda.ingresso.preco.toFixed(2)}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Forma de Pagamento:</span>
+                  <span className="font-semibold">
+                    {venda.formaPagamento === "pix" && "PIX"}
+                    {venda.formaPagamento === "cartao_credito" &&
+                      "Cartão de Crédito"}
+                    {venda.formaPagamento === "cartao_debito" &&
+                      "Cartão de Débito"}
+                    {venda.formaPagamento === "boleto" && "Boleto Bancário"}
+                  </span>
+                </div>
                 <div className="pt-3 border-t">
                   <div className="flex justify-between">
                     <span className="text-lg font-semibold">Total Pago:</span>

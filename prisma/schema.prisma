@@ -54,24 +54,48 @@ model Cliente {
   updatedAt   DateTime @updatedAt
   
   vendas      Venda[]
+  notificacoes Notificacao[]
   
   @@map("clientes")
 }
 
 model Venda {
-  id          String   @id @default(cuid())
-  clienteId   String
-  ingressoId  String
-  quantidade  Int
-  valorTotal  Float
-  status      String   @default("pendente") // pendente, confirmada, cancelada
-  codigo      String   @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  clienteId      String
+  ingressoId     String
+  quantidade     Int
+  valorTotal     Float
+  formaPagamento String   @default("pix") // pix, cartao_credito, cartao_debito, boleto
+  statusPagamento String @default("pendente") // pendente, processando, confirmado, cancelado, expirado
+  status         String   @default("pendente") // pendente, confirmada, cancelada
+  codigo         String   @unique
+  codigoPagamento String? // Código PIX, código de barras do boleto, ID da transação
+  qrCodePix      String?  // QR Code em base64 para PIX
+  vencimentoBoleto DateTime? // Data de vencimento do boleto
+  dadosCartao    String?  // JSON com últimos 4 dígitos e bandeira (criptografado)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
   
-  cliente     Cliente  @relation(fields: [clienteId], references: [id])
-  ingresso    Ingresso @relation(fields: [ingressoId], references: [id])
+  cliente        Cliente  @relation(fields: [clienteId], references: [id])
+  ingresso       Ingresso @relation(fields: [ingressoId], references: [id])
   
   @@map("vendas")
+}
+
+model Notificacao {
+  id          String   @id @default(cuid())
+  clienteId   String
+  titulo      String
+  mensagem    String
+  tipo        String   @default("info") // info, success, warning, error
+  lida        Boolean  @default(false)
+  link        String?  // Link opcional para ação relacionada
+  createdAt   DateTime @default(now())
+  
+  cliente     Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  
+  @@map("notificacoes")
+  @@index([clienteId])
+  @@index([lida])
 }
 

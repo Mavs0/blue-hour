@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,298 +10,337 @@ import {
 } from "@/components/ui/card";
 import {
   Sparkles,
-  Music,
-  Ticket,
-  Star,
-  Users,
   Calendar,
-  Heart,
+  MapPin,
+  Ticket,
   ArrowRight,
-  Play,
+  Clock,
+  Users,
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { DreamParticles } from "@/components/dream-particles";
-import { FloatingStars } from "@/components/floating-stars";
 
-export default function Home() {
+export default async function Home() {
+  const eventos = await prisma.evento.findMany({
+    where: { ativo: true },
+    include: {
+      ingressos: {
+        where: { ativo: true },
+      },
+    },
+    orderBy: {
+      data: "asc",
+    },
+    take: 6,
+  });
+
+  const formatarData = (data: Date) => {
+    return new Date(data).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatarHora = (data: Date) => {
+    return new Date(data).toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const obterPrecoMinimo = (ingressos: any[]) => {
+    if (ingressos.length === 0) return null;
+    const precos = ingressos.map((i) => i.preco);
+    return Math.min(...precos);
+  };
+
   return (
     <main className="min-h-screen bg-white">
       <Navbar />
 
-      {/* Hero Section - Full Screen */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-sky-50 via-pink-50 to-purple-50">
-        <DreamParticles />
-        <FloatingStars />
+      {/* Hero Section */}
+      <section className="relative pt-24 pb-12 md:pt-32 md:pb-16 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-20"></div>
 
-        {/* Decorative Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-sky-200/40 to-transparent rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-pink-200/40 to-transparent rounded-full blur-3xl"></div>
-        </div>
-
-        <div className="relative z-10 container mx-auto px-6 lg:px-8">
-          <div className="max-w-5xl mx-auto">
-            {/* Badge */}
-            <div className="flex justify-center mb-8">
-              <div className="inline-flex items-center gap-2 px-6 py-3 bg-white/80 backdrop-blur-md rounded-full border border-pink-200/50 shadow-lg">
-                <Sparkles className="w-5 h-5 text-pink-500" />
-                <span className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                  Eventos Exclusivos TXT
-                </span>
-              </div>
+        <div className="container mx-auto px-6 lg:px-8 relative z-10">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-full">
+              <Sparkles className="w-4 h-4 text-sky-400" />
+              <span className="text-xs font-semibold text-white/90 uppercase tracking-wide">
+                Eventos Exclusivos TXT
+              </span>
             </div>
 
-            {/* Main Heading */}
-            <h1 className="text-7xl md:text-9xl lg:text-[12rem] font-black mb-8 leading-[0.9] text-center">
-              <span className="block bg-gradient-to-r from-sky-500 via-pink-400 to-purple-500 bg-clip-text text-transparent">
-                BLUE
-              </span>
-              <span className="block bg-gradient-to-r from-purple-500 via-pink-400 to-sky-500 bg-clip-text text-transparent mt-2">
-                HOUR
-              </span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
+              Blue Hour
             </h1>
+            <p className="text-lg md:text-xl text-gray-300 mb-8">
+              A maior experiência de K-POP em Manaus
+            </p>
 
-            {/* Subtitle */}
-            <div className="text-center mb-12">
-              <p className="text-2xl md:text-3xl font-light text-gray-600 mb-4">
-                Tomorrow X Together
-              </p>
-              <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto">
-                Um sonho lindo esperando por você em Manaus
-              </p>
-            </div>
-
-            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/eventos">
+              <Link href="#eventos">
                 <Button
                   size="lg"
-                  className="group bg-gradient-to-r from-sky-500 to-pink-500 hover:from-sky-600 hover:to-pink-600 text-white text-lg px-10 py-7 rounded-full shadow-2xl hover:shadow-pink-500/50 transition-all transform hover:scale-105 border-0 font-semibold"
+                  className="bg-white text-gray-900 hover:bg-gray-100 text-base px-8 py-6 rounded-lg font-semibold shadow-xl group"
                 >
-                  Ver Eventos
+                  Ver Eventos Disponíveis
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Events Section */}
+      <section id="eventos" className="py-16 bg-white">
+        <div className="container mx-auto px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                Eventos em Destaque
+              </h2>
+              <p className="text-gray-600">
+                Confira os próximos eventos do TXT em Manaus
+              </p>
+            </div>
+            <Link href="/eventos" className="hidden md:block">
+              <Button variant="outline" className="border-gray-300">
+                Ver Todos
+                <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+
+          {eventos.length === 0 ? (
+            <div className="text-center py-16 bg-gray-50 rounded-lg border border-gray-200">
+              <Ticket className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Nenhum evento disponível no momento
+              </h3>
+              <p className="text-gray-600">
+                Fique atento para novos eventos em breve!
+              </p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {eventos.map((evento) => {
+                const precoMinimo = obterPrecoMinimo(evento.ingressos);
+                const ingressosDisponiveis = evento.ingressos.reduce(
+                  (acc, ing) => acc + (ing.quantidade - ing.vendidos),
+                  0
+                );
+
+                return (
+                  <Card
+                    key={evento.id}
+                    className="group hover:shadow-xl transition-all duration-300 border border-gray-200 overflow-hidden"
+                  >
+                    {evento.imagemUrl && (
+                      <div className="relative h-48 bg-gradient-to-br from-sky-500 to-pink-500 overflow-hidden">
+                        <img
+                          src={evento.imagemUrl}
+                          alt={evento.nome}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div className="absolute top-4 right-4">
+                          {ingressosDisponiveis > 0 ? (
+                            <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
+                              Disponível
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded-full">
+                              Esgotado
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {!evento.imagemUrl && (
+                      <div className="relative h-48 bg-gradient-to-br from-sky-500 via-pink-500 to-purple-500 flex items-center justify-center">
+                        <Ticket className="w-16 h-16 text-white/30" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                        <div className="absolute top-4 right-4">
+                          {ingressosDisponiveis > 0 ? (
+                            <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
+                              Disponível
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded-full">
+                              Esgotado
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-xl font-bold text-gray-900 line-clamp-2 group-hover:text-sky-600 transition-colors">
+                        {evento.nome}
+                      </CardTitle>
+                      <CardDescription className="flex items-center gap-4 mt-2">
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-600">
+                            {formatarData(evento.data)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <Clock className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-600">
+                            {formatarHora(evento.data)}
+                          </span>
+                        </div>
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="pt-0">
+                      <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 text-gray-400" />
+                        <span className="line-clamp-1">
+                          {evento.local} - {evento.cidade}
+                        </span>
+                      </div>
+
+                      {evento.descricao && (
+                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                          {evento.descricao}
+                        </p>
+                      )}
+
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                        <div>
+                          {precoMinimo !== null ? (
+                            <div>
+                              <span className="text-xs text-gray-500">
+                                A partir de
+                              </span>
+                              <div className="text-xl font-bold text-gray-900">
+                                R$ {precoMinimo.toFixed(2).replace(".", ",")}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-500">
+                              Preços em breve
+                            </div>
+                          )}
+                        </div>
+                        <Link href={`/eventos/${evento.id}`}>
+                          <Button
+                            size="sm"
+                            className="bg-gray-900 text-white hover:bg-gray-800"
+                            disabled={ingressosDisponiveis === 0}
+                          >
+                            {ingressosDisponiveis > 0 ? "Comprar" : "Esgotado"}
+                            <ArrowRight className="ml-1 w-4 h-4" />
+                          </Button>
+                        </Link>
+                      </div>
+
+                      {evento.ingressos.length > 0 && (
+                        <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+                          <Users className="w-3 h-3" />
+                          <span>
+                            {evento.ingressos.length} tipo
+                            {evento.ingressos.length > 1 ? "s" : ""} de ingresso
+                          </span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {eventos.length > 0 && (
+            <div className="mt-8 text-center md:hidden">
               <Link href="/eventos">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="bg-white/90 backdrop-blur-md border-2 border-gray-200 text-gray-700 text-lg px-10 py-7 rounded-full hover:bg-white hover:border-pink-300 transition-all shadow-lg font-semibold"
-                >
-                  <Play className="mr-2 w-5 h-5" />
-                  Saiba Mais
+                <Button variant="outline" className="w-full border-gray-300">
+                  Ver Todos os Eventos
+                  <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
             </div>
-          </div>
-        </div>
-
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-gray-300 rounded-full flex justify-center bg-white/50 backdrop-blur-sm">
-            <div className="w-1 h-3 bg-pink-400 rounded-full mt-2"></div>
-          </div>
+          )}
         </div>
       </section>
 
-      {/* About Section */}
-      <section className="py-24 bg-white">
+      {/* Why Section */}
+      <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-20">
-              <h2 className="text-5xl md:text-6xl font-black mb-6">
-                <span className="bg-gradient-to-r from-sky-500 via-pink-500 to-purple-500 bg-clip-text text-transparent">
-                  Blue Hour
-                </span>
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Por que escolher a Blue Hour?
               </h2>
-              <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                Uma comissão de eventos dedicada a trazer experiências
-                exclusivas do{" "}
-                <span className="font-bold text-pink-500">TXT</span> para
-                Manaus. Criamos momentos mágicos e inesquecíveis.
+              <p className="text-lg text-gray-600">
+                A melhor experiência de eventos TXT em Manaus
               </p>
             </div>
 
-            {/* Feature Grid */}
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="p-8 rounded-3xl bg-gradient-to-br from-sky-50 to-pink-50 border border-sky-100 hover:shadow-2xl transition-all transform hover:-translate-y-2">
-                <div className="w-16 h-16 bg-gradient-to-br from-sky-500 to-pink-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                  <Star className="w-8 h-8 text-white" />
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-lg border border-gray-200">
+                <div className="w-12 h-12 bg-sky-100 rounded-lg flex items-center justify-center mb-4">
+                  <Ticket className="w-6 h-6 text-sky-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Ingressos Seguros
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Sistema confiável e seguro para compra de ingressos online
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg border border-gray-200">
+                <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
+                  <Calendar className="w-6 h-6 text-pink-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   Eventos Exclusivos
                 </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Cada evento é cuidadosamente planejado para celebrar a música
-                  e a arte do Tomorrow X Together.
+                <p className="text-gray-600 text-sm">
+                  Acesso aos melhores eventos do TXT em Manaus
                 </p>
               </div>
 
-              <div className="p-8 rounded-3xl bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-100 hover:shadow-2xl transition-all transform hover:-translate-y-2">
-                <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-purple-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                  <Music className="w-8 h-8 text-white" />
+              <div className="bg-white p-6 rounded-lg border border-gray-200">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                  <Users className="w-6 h-6 text-purple-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                  Experiência Blue Hour
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Viva a atmosfera única do Blue Hour, onde cada momento é um
-                  sonho lindo compartilhado com outros MOAs.
-                </p>
-              </div>
-
-              <div className="p-8 rounded-3xl bg-gradient-to-br from-purple-50 to-sky-50 border border-purple-100 hover:shadow-2xl transition-all transform hover:-translate-y-2">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-sky-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                  <Users className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   Comunidade MOA
                 </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Junte-se à comunidade MOA em Manaus e compartilhe sua paixão
-                  pelo TXT em eventos inesquecíveis.
+                <p className="text-gray-600 text-sm">
+                  Conecte-se com outros fãs e viva momentos inesquecíveis
                 </p>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-20 bg-gradient-to-br from-sky-50 via-pink-50 to-purple-50">
-        <div className="container mx-auto px-6 lg:px-8">
-          <div className="max-w-5xl mx-auto">
-            <div className="grid md:grid-cols-3 gap-12 text-center">
-              <div>
-                <div className="text-5xl md:text-6xl font-black bg-gradient-to-r from-sky-500 to-pink-500 bg-clip-text text-transparent mb-2">
-                  100+
-                </div>
-                <div className="text-gray-600 font-medium">
-                  Eventos Realizados
-                </div>
-              </div>
-              <div>
-                <div className="text-5xl md:text-6xl font-black bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-2">
-                  5K+
-                </div>
-                <div className="text-gray-600 font-medium">
-                  MOAs Satisfeitos
-                </div>
-              </div>
-              <div>
-                <div className="text-5xl md:text-6xl font-black bg-gradient-to-r from-purple-500 to-sky-500 bg-clip-text text-transparent mb-2">
-                  100%
-                </div>
-                <div className="text-gray-600 font-medium">
-                  Experiência Premium
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-24 bg-white">
-        <div className="container mx-auto px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-20">
-              <h2 className="text-5xl md:text-6xl font-black mb-6">
-                <span className="bg-gradient-to-r from-sky-500 via-pink-500 to-purple-500 bg-clip-text text-transparent">
-                  Por que escolher
-                </span>
-                <br />
-                <span className="text-gray-800">a Blue Hour?</span>
-              </h2>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              <Card className="border-2 border-gray-100 hover:border-pink-200 transition-all hover:shadow-2xl transform hover:-translate-y-2 bg-white">
-                <CardHeader className="pb-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-sky-500 to-pink-500 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                    <Ticket className="w-7 h-7 text-white" />
-                  </div>
-                  <CardTitle className="text-2xl text-gray-800">
-                    Ingressos Exclusivos
-                  </CardTitle>
-                  <CardDescription className="text-base text-gray-600">
-                    Acesso prioritário aos eventos do TXT em Manaus
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 leading-relaxed">
-                    Garanta seu lugar nos eventos mais aguardados com nosso
-                    sistema seguro e confiável.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-2 border-gray-100 hover:border-pink-200 transition-all hover:shadow-2xl transform hover:-translate-y-2 bg-white">
-                <CardHeader className="pb-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-purple-500 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                    <Calendar className="w-7 h-7 text-white" />
-                  </div>
-                  <CardTitle className="text-2xl text-gray-800">
-                    Eventos Curados
-                  </CardTitle>
-                  <CardDescription className="text-base text-gray-600">
-                    Seleção cuidadosa dos melhores eventos TXT
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 leading-relaxed">
-                    Cada evento passa por um processo rigoroso para garantir a
-                    melhor experiência Blue Hour.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-2 border-gray-100 hover:border-pink-200 transition-all hover:shadow-2xl transform hover:-translate-y-2 bg-white">
-                <CardHeader className="pb-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-sky-500 rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                    <Star className="w-7 h-7 text-white" />
-                  </div>
-                  <CardTitle className="text-2xl text-gray-800">
-                    Experiência Premium
-                  </CardTitle>
-                  <CardDescription className="text-base text-gray-600">
-                    Produção de alta qualidade em cada detalhe
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 leading-relaxed">
-                    Do som à iluminação, cada aspecto é pensado para criar uma
-                    experiência única e inesquecível.
-                  </p>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-r from-sky-500 via-pink-500 to-purple-500 relative overflow-hidden">
-        <FloatingStars />
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="container mx-auto px-6 lg:px-8 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-5xl md:text-6xl font-black text-white mb-6">
-              Não perca nossos próximos eventos TXT!
+      <section className="py-16 bg-gray-900">
+        <div className="container mx-auto px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Não perca nossos próximos eventos TXT
             </h2>
-            <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
-              Fique por dentro de todos os eventos exclusivos da Blue Hour e
-              garanta seu ingresso antes que esgotem.
+            <p className="text-lg text-gray-300 mb-8">
+              Fique por dentro de todos os eventos exclusivos da Blue Hour
             </p>
             <Link href="/eventos">
               <Button
                 size="lg"
-                className="bg-white text-pink-500 hover:bg-gray-50 text-lg px-12 py-8 rounded-full shadow-2xl font-bold transform hover:scale-105 transition-all border-0"
+                className="bg-white text-gray-900 hover:bg-gray-100 text-base px-10 py-6 rounded-lg font-semibold shadow-xl group"
               >
                 <Ticket className="mr-2 w-5 h-5" />
                 Ver Todos os Eventos
-                <ArrowRight className="ml-2 w-5 h-5" />
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </div>

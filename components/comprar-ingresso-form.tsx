@@ -12,12 +12,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CreditCard, Smartphone, Receipt, Wallet } from "lucide-react";
+import { DadosCartaoForm } from "./dados-cartao-form";
 
 interface ComprarIngressoFormProps {
   eventoId: string;
@@ -40,32 +49,83 @@ export function ComprarIngressoForm({
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CompraIngressoInput>({
     resolver: zodResolver(compraIngressoSchema),
     defaultValues: {
       quantidade: 1,
+      formaPagamento: "pix",
     },
   });
 
   const quantidade = watch("quantidade") || 1;
+  const formaPagamento = watch("formaPagamento") || "pix";
   const valorTotal = precoUnitario * quantidade;
+  const [dadosCartao, setDadosCartao] = useState<{
+    numero: string;
+    nome: string;
+    validade: string;
+    cvv: string;
+    parcelas?: number;
+  } | null>(null);
+
+  // Resetar dados do cartão quando mudar forma de pagamento
+  const handleFormaPagamentoChange = (value: string) => {
+    setValue(
+      "formaPagamento",
+      value as "pix" | "cartao_credito" | "cartao_debito" | "boleto",
+      {
+        shouldValidate: true,
+      }
+    );
+    if (value !== "cartao_credito" && value !== "cartao_debito") {
+      setDadosCartao(null);
+    }
+  };
 
   const onSubmit = async (data: CompraIngressoInput) => {
     setIsSubmitting(true);
     setError(null);
 
+    // Validar dados do cartão se necessário
+    if (
+      (data.formaPagamento === "cartao_credito" ||
+        data.formaPagamento === "cartao_debito") &&
+      !dadosCartao
+    ) {
+      setError("Preencha os dados do cartão");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
+      const payload: any = {
+        eventoId,
+        ingressoId,
+        ...data,
+      };
+
+      // Adicionar dados do cartão se for pagamento com cartão
+      if (
+        data.formaPagamento === "cartao_credito" ||
+        data.formaPagamento === "cartao_debito"
+      ) {
+        payload.numeroCartao = dadosCartao?.numero;
+        payload.nomeCartao = dadosCartao?.nome;
+        payload.validadeCartao = dadosCartao?.validade;
+        payload.cvvCartao = dadosCartao?.cvv;
+        if (data.formaPagamento === "cartao_credito" && dadosCartao?.parcelas) {
+          payload.parcelas = dadosCartao.parcelas;
+        }
+      }
+
       const response = await fetch("/api/comprar", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          eventoId,
-          ingressoId,
-          ...data,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
@@ -74,8 +134,12 @@ export function ComprarIngressoForm({
         throw new Error(result.error || "Erro ao processar compra");
       }
 
-      // Redirecionar para página de confirmação
-      router.push(`/compra/confirmacao?codigo=${result.venda.codigo}`);
+      // Redirecionar baseado no status do pagamento
+      if (result.venda.statusPagamento === "confirmado") {
+        router.push(`/compra/confirmacao?codigo=${result.venda.codigo}`);
+      } else {
+        router.push(`/compra/pagamento?codigo=${result.venda.codigo}`);
+      }
     } catch (err: any) {
       setError(err.message || "Erro ao processar compra. Tente novamente.");
       setIsSubmitting(false);
@@ -175,6 +239,64 @@ export function ComprarIngressoForm({
                 Máximo: {Math.min(disponivel, 10)} ingresso(s)
               </p>
             </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="formaPagamento">Forma de Pagamento *</Label>
+              <Select
+                defaultValue="pix"
+                value={formaPagamento}
+                onValueChange={handleFormaPagamentoChange}
+              >
+                <SelectTrigger id="formaPagamento" className="w-full">
+                  <SelectValue placeholder="Selecione a forma de pagamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pix">
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="h-4 w-4" />
+                      <span>PIX</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="cartao_credito">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      <span>Cartão de Crédito</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="cartao_debito">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4" />
+                      <span>Cartão de Débito</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="boleto">
+                    <div className="flex items-center gap-2">
+                      <Receipt className="h-4 w-4" />
+                      <span>Boleto Bancário</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.formaPagamento && (
+                <p className="text-sm text-red-500">
+                  {errors.formaPagamento.message}
+                </p>
+              )}
+            </div>
+
+            {/* Formulário de dados do cartão */}
+            {(formaPagamento === "cartao_credito" ||
+              formaPagamento === "cartao_debito") && (
+              <div className="md:col-span-2">
+                <DadosCartaoForm
+                  onDadosChange={(dados) => setDadosCartao(dados)}
+                  valorTotal={valorTotal}
+                  tipo={
+                    formaPagamento === "cartao_credito" ? "credito" : "debito"
+                  }
+                />
+              </div>
+            )}
           </div>
 
           <div className="pt-4 border-t">
