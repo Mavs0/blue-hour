@@ -222,6 +222,8 @@ async function PagamentoContent({ codigo }: { codigo: string }) {
   );
 }
 
+export const dynamic = "force-dynamic";
+
 export default function PagamentoPage({
   searchParams,
 }: {

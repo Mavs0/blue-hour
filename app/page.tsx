@@ -20,6 +20,8 @@ import {
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const eventos = await prisma.evento.findMany({
     where: { ativo: true },
