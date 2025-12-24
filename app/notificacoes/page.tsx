@@ -224,9 +224,9 @@ export default function NotificacoesPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-purple-50 to-pink-50">
+    <main className="flex flex-col flex-1 bg-gradient-to-b from-purple-50 to-pink-50">
       <Navbar />
-      <div className="container mx-auto px-4 py-24 max-w-4xl">
+      <div className="flex-1 container mx-auto px-4 py-24 max-w-4xl">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             Notificações

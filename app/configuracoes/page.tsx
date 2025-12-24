@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
+import { useI18n } from "@/components/providers/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +13,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import {
@@ -21,6 +30,7 @@ import {
   Globe,
   Moon,
   Sun,
+  Monitor,
   Save,
   CheckCircle2,
   AlertCircle,
@@ -29,8 +39,12 @@ import {
   CreditCard,
 } from "lucide-react";
 import Link from "next/link";
+import { locales, localeNames, type Locale } from "@/lib/i18n";
 
 export default function ConfiguracoesPage() {
+  const { theme, setTheme } = useTheme();
+  const { locale, setLocale, t } = useI18n();
+  const [mounted, setMounted] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,33 +56,65 @@ export default function ConfiguracoesPage() {
   const [notificacoesLembrete, setNotificacoesLembrete] = useState(true);
   const [notificacoesPromocoes, setNotificacoesPromocoes] = useState(false);
 
-  // Estados para preferências
-  const [tema, setTema] = useState<"claro" | "escuro" | "sistema">("sistema");
-  const [idioma, setIdioma] = useState("pt-BR");
+  // Aguardar montagem para evitar hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+    // Carregar preferências do localStorage
+    const savedNotifications = localStorage.getItem("notifications");
+    if (savedNotifications) {
+      try {
+        const prefs = JSON.parse(savedNotifications);
+        setNotificacoesEmail(prefs.email ?? true);
+        setNotificacoesCompra(prefs.compra ?? true);
+        setNotificacoesPagamento(prefs.pagamento ?? true);
+        setNotificacoesLembrete(prefs.lembrete ?? true);
+        setNotificacoesPromocoes(prefs.promocoes ?? false);
+      } catch (e) {
+        console.error("Erro ao carregar preferências:", e);
+      }
+    }
+  }, []);
 
   const handleSalvar = async () => {
     setSalvando(true);
     setError(null);
     setSuccess(null);
 
-    // Simular salvamento (em produção, salvaria no banco de dados)
-    setTimeout(() => {
-      setSuccess("Configurações salvas com sucesso!");
-      setSalvando(false);
+    try {
+      // Salvar preferências no localStorage
+      const preferences = {
+        email: notificacoesEmail,
+        compra: notificacoesCompra,
+        pagamento: notificacoesPagamento,
+        lembrete: notificacoesLembrete,
+        promocoes: notificacoesPromocoes,
+      };
+      localStorage.setItem("notifications", JSON.stringify(preferences));
+
+      // O tema e idioma já são salvos automaticamente pelos providers
+      setSuccess(t("settings.saved"));
       setTimeout(() => setSuccess(null), 3000);
-    }, 1000);
+    } catch (err) {
+      setError(t("error.saveSettings"));
+    } finally {
+      setSalvando(false);
+    }
   };
 
+  if (!mounted) {
+    return null; // Evitar hydration mismatch
+  }
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-purple-50 to-pink-50">
+    <main className="flex flex-col flex-1 bg-gradient-to-b from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
       <Navbar />
-      <div className="container mx-auto px-4 py-24 max-w-4xl">
+      <div className="flex-1 container mx-auto px-4 py-24 max-w-4xl">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Configurações
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+            {t("settings.title")}
           </h1>
-          <p className="text-gray-600">
-            Gerencie suas preferências e configurações da conta
+          <p className="text-gray-600 dark:text-gray-400">
+            {t("settings.subtitle")}
           </p>
         </div>
 
@@ -78,11 +124,9 @@ export default function ConfiguracoesPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="w-5 h-5" />
-                Notificações
+                {t("notifications.title")}
               </CardTitle>
-              <CardDescription>
-                Escolha como e quando você deseja ser notificado
-              </CardDescription>
+              <CardDescription>{t("notifications.subtitle")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
@@ -92,10 +136,10 @@ export default function ConfiguracoesPage() {
                       htmlFor="notif-email"
                       className="text-base font-medium"
                     >
-                      Notificações por Email
+                      {t("notifications.email")}
                     </Label>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Receba notificações importantes por email
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {t("notifications.email.desc")}
                     </p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -105,18 +149,18 @@ export default function ConfiguracoesPage() {
                       onChange={(e) => setNotificacoesEmail(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 dark:peer-checked:bg-purple-500"></div>
                   </label>
                 </div>
 
-                <div className="border-t pt-4 space-y-4">
+                <div className="border-t dark:border-gray-700 pt-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <Label className="text-base font-medium">
-                        Confirmação de Compra
+                        {t("notifications.purchase")}
                       </Label>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Receba email quando realizar uma compra
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {t("notifications.purchase.desc")}
                       </p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -129,17 +173,17 @@ export default function ConfiguracoesPage() {
                         disabled={!notificacoesEmail}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                      <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 dark:peer-checked:bg-purple-500 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
                     </label>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <Label className="text-base font-medium">
-                        Status de Pagamento
+                        {t("notifications.payment")}
                       </Label>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Receba atualizações sobre o status do pagamento
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {t("notifications.payment.desc")}
                       </p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -152,17 +196,17 @@ export default function ConfiguracoesPage() {
                         disabled={!notificacoesEmail}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                      <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 dark:peer-checked:bg-purple-500 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
                     </label>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <Label className="text-base font-medium">
-                        Lembretes de Eventos
+                        {t("notifications.reminder")}
                       </Label>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Receba lembretes antes dos eventos que você comprou
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {t("notifications.reminder.desc")}
                       </p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -175,17 +219,17 @@ export default function ConfiguracoesPage() {
                         disabled={!notificacoesEmail}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                      <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 dark:peer-checked:bg-purple-500 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
                     </label>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <Label className="text-base font-medium">
-                        Promoções e Ofertas
+                        {t("notifications.promotions")}
                       </Label>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Receba ofertas exclusivas e novidades
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {t("notifications.promotions.desc")}
                       </p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -198,7 +242,7 @@ export default function ConfiguracoesPage() {
                         disabled={!notificacoesEmail}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                      <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 dark:peer-checked:bg-purple-500 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
                     </label>
                   </div>
                 </div>
@@ -211,11 +255,9 @@ export default function ConfiguracoesPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="w-5 h-5" />
-                Preferências
+                {t("preferences.title")}
               </CardTitle>
-              <CardDescription>
-                Personalize sua experiência na plataforma
-              </CardDescription>
+              <CardDescription>{t("preferences.subtitle")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
@@ -223,46 +265,49 @@ export default function ConfiguracoesPage() {
                   htmlFor="tema"
                   className="text-base font-medium mb-2 block"
                 >
-                  Tema
+                  {t("settings.theme")}
                 </Label>
                 <div className="grid grid-cols-3 gap-4">
                   <button
-                    onClick={() => setTema("claro")}
+                    onClick={() => setTheme("light")}
                     className={`p-4 border-2 rounded-lg transition-all ${
-                      tema === "claro"
-                        ? "border-purple-500 bg-purple-50"
-                        : "border-gray-200 hover:border-gray-300"
+                      theme === "light"
+                        ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                     }`}
                   >
                     <Sun className="w-6 h-6 mx-auto mb-2 text-yellow-500" />
-                    <span className="text-sm font-medium">Claro</span>
+                    <span className="text-sm font-medium dark:text-gray-300">
+                      {t("settings.theme.light")}
+                    </span>
                   </button>
                   <button
-                    onClick={() => setTema("escuro")}
+                    onClick={() => setTheme("dark")}
                     className={`p-4 border-2 rounded-lg transition-all ${
-                      tema === "escuro"
-                        ? "border-purple-500 bg-purple-50"
-                        : "border-gray-200 hover:border-gray-300"
+                      theme === "dark"
+                        ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                     }`}
                   >
                     <Moon className="w-6 h-6 mx-auto mb-2 text-indigo-500" />
-                    <span className="text-sm font-medium">Escuro</span>
+                    <span className="text-sm font-medium dark:text-gray-300">
+                      {t("settings.theme.dark")}
+                    </span>
                   </button>
                   <button
-                    onClick={() => setTema("sistema")}
+                    onClick={() => setTheme("system")}
                     className={`p-4 border-2 rounded-lg transition-all ${
-                      tema === "sistema"
-                        ? "border-purple-500 bg-purple-50"
-                        : "border-gray-200 hover:border-gray-300"
+                      theme === "system"
+                        ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
+                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                     }`}
                   >
-                    <Settings className="w-6 h-6 mx-auto mb-2 text-gray-500" />
-                    <span className="text-sm font-medium">Sistema</span>
+                    <Monitor className="w-6 h-6 mx-auto mb-2 text-gray-500" />
+                    <span className="text-sm font-medium dark:text-gray-300">
+                      {t("settings.theme.system")}
+                    </span>
                   </button>
                 </div>
-                <p className="text-sm text-gray-500 mt-2">
-                  O tema escuro ainda não está disponível
-                </p>
               </div>
 
               <div>
@@ -270,21 +315,23 @@ export default function ConfiguracoesPage() {
                   htmlFor="idioma"
                   className="text-base font-medium mb-2 block"
                 >
-                  Idioma
+                  {t("settings.language")}
                 </Label>
-                <select
-                  id="idioma"
-                  value={idioma}
-                  onChange={(e) => setIdioma(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                <Select
+                  value={locale}
+                  onValueChange={(value) => setLocale(value as Locale)}
                 >
-                  <option value="pt-BR">Português (Brasil)</option>
-                  <option value="en-US">English (US)</option>
-                  <option value="es-ES">Español</option>
-                </select>
-                <p className="text-sm text-gray-500 mt-2">
-                  Outros idiomas serão adicionados em breve
-                </p>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locales.map((loc) => (
+                      <SelectItem key={loc} value={loc}>
+                        {localeNames[loc]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
@@ -294,28 +341,23 @@ export default function ConfiguracoesPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="w-5 h-5" />
-                Privacidade e Segurança
+                {t("privacy.title")}
               </CardTitle>
-              <CardDescription>
-                Gerencie suas configurações de privacidade
-              </CardDescription>
+              <CardDescription>{t("privacy.subtitle")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Seus dados estão seguros:</strong> Utilizamos
-                  criptografia para proteger suas informações pessoais e de
-                  pagamento. Nunca compartilhamos seus dados com terceiros sem
-                  sua autorização.
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  {t("privacy.dataSafe")}
                 </p>
               </div>
               <div className="space-y-2">
                 <Button variant="outline" className="w-full justify-start">
                   <Shield className="w-4 h-4 mr-2" />
-                  Alterar Senha
+                  {t("privacy.changePassword")}
                 </Button>
-                <p className="text-xs text-gray-500">
-                  Sistema de autenticação será implementado em breve
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {t("privacy.authComingSoon")}
                 </p>
               </div>
             </CardContent>
@@ -323,14 +365,14 @@ export default function ConfiguracoesPage() {
 
           {/* Mensagens de sucesso/erro */}
           {success && (
-            <div className="flex items-center gap-2 text-green-600 bg-green-50 p-4 rounded-lg border border-green-200">
+            <div className="flex items-center gap-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
               <CheckCircle2 className="w-5 h-5" />
               <span>{success}</span>
             </div>
           )}
 
           {error && (
-            <div className="flex items-center gap-2 text-red-600 bg-red-50 p-4 rounded-lg border border-red-200">
+            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
               <AlertCircle className="w-5 h-5" />
               <span>{error}</span>
             </div>
@@ -346,29 +388,31 @@ export default function ConfiguracoesPage() {
               {salvando ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Salvando...
+                  {t("settings.saving")}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Salvar Configurações
+                  {t("settings.save")}
                 </>
               )}
             </Button>
           </div>
 
           {/* Links rápidos */}
-          <div className="grid md:grid-cols-3 gap-4 pt-6 border-t">
+          <div className="grid md:grid-cols-3 gap-4 pt-6 border-t dark:border-gray-700">
             <Link href="/perfil">
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-purple-100 rounded-lg mb-3">
-                      <Mail className="w-6 h-6 text-purple-600" />
+                    <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg mb-3">
+                      <Mail className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                     </div>
-                    <h3 className="font-semibold mb-1">Meu Perfil</h3>
-                    <p className="text-sm text-gray-600">
-                      Editar informações pessoais
+                    <h3 className="font-semibold mb-1 dark:text-gray-300">
+                      {t("links.profile.title")}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {t("links.profile.desc")}
                     </p>
                   </div>
                 </CardContent>
@@ -378,11 +422,15 @@ export default function ConfiguracoesPage() {
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-sky-100 rounded-lg mb-3">
-                      <CreditCard className="w-6 h-6 text-sky-600" />
+                    <div className="p-3 bg-sky-100 dark:bg-sky-900/30 rounded-lg mb-3">
+                      <CreditCard className="w-6 h-6 text-sky-600 dark:text-sky-400" />
                     </div>
-                    <h3 className="font-semibold mb-1">Meus Ingressos</h3>
-                    <p className="text-sm text-gray-600">Ver suas compras</p>
+                    <h3 className="font-semibold mb-1 dark:text-gray-300">
+                      {t("links.tickets.title")}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {t("links.tickets.desc")}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -391,12 +439,14 @@ export default function ConfiguracoesPage() {
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-pink-100 rounded-lg mb-3">
-                      <Smartphone className="w-6 h-6 text-pink-600" />
+                    <div className="p-3 bg-pink-100 dark:bg-pink-900/30 rounded-lg mb-3">
+                      <Smartphone className="w-6 h-6 text-pink-600 dark:text-pink-400" />
                     </div>
-                    <h3 className="font-semibold mb-1">Eventos</h3>
-                    <p className="text-sm text-gray-600">
-                      Explorar eventos disponíveis
+                    <h3 className="font-semibold mb-1 dark:text-gray-300">
+                      {t("links.events.title")}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {t("links.events.desc")}
                     </p>
                   </div>
                 </CardContent>

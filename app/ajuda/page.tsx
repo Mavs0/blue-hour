@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -23,7 +22,6 @@ import {
   ChevronDown,
   ChevronUp,
   Ticket,
-  CreditCard,
   User,
   Settings,
   FileText,
@@ -33,127 +31,117 @@ import {
   Info,
 } from "lucide-react";
 import Link from "next/link";
+import { useI18n } from "@/components/providers/i18n-provider";
 
 interface FAQItem {
   id: string;
-  pergunta: string;
-  resposta: string;
-  categoria: string;
+  perguntaKey: string;
+  respostaKey: string;
+  categoriaKey: string;
 }
 
 const faqs: FAQItem[] = [
   {
     id: "1",
-    categoria: "Compra de Ingressos",
-    pergunta: "Como compro ingressos?",
-    resposta:
-      "Para comprar ingressos, navegue até a página do evento desejado, selecione o tipo de ingresso e a quantidade, preencha seus dados pessoais, escolha a forma de pagamento e finalize a compra. Você receberá um código de confirmação por email.",
+    categoriaKey: "help.categories.tickets",
+    perguntaKey: "help.faq.tickets.howToBuy",
+    respostaKey: "help.faq.tickets.howToBuy.answer",
   },
   {
     id: "2",
-    categoria: "Compra de Ingressos",
-    pergunta: "Quais formas de pagamento são aceitas?",
-    resposta:
-      "Aceitamos PIX, Cartão de Crédito, Cartão de Débito e Boleto Bancário. O pagamento via PIX é confirmado automaticamente em até 2 minutos. Para cartões, a confirmação é imediata. Boletos têm validade de 3 dias.",
+    categoriaKey: "help.categories.tickets",
+    perguntaKey: "help.faq.tickets.paymentMethods",
+    respostaKey: "help.faq.tickets.paymentMethods.answer",
   },
   {
     id: "3",
-    categoria: "Compra de Ingressos",
-    pergunta: "Posso comprar mais de um ingresso?",
-    resposta:
-      "Sim! Você pode comprar até 10 ingressos por transação. Basta selecionar a quantidade desejada no momento da compra.",
+    categoriaKey: "help.categories.tickets",
+    perguntaKey: "help.faq.tickets.multipleTickets",
+    respostaKey: "help.faq.tickets.multipleTickets.answer",
   },
   {
     id: "4",
-    categoria: "Compra de Ingressos",
-    pergunta: "Como recebo meu ingresso?",
-    resposta:
-      "Após a confirmação do pagamento, você receberá um email com o código da compra e o QR Code do ingresso. Você também pode acessar seus ingressos na seção 'Meus Ingressos' usando seu email ou CPF.",
+    categoriaKey: "help.categories.tickets",
+    perguntaKey: "help.faq.tickets.howToReceive",
+    respostaKey: "help.faq.tickets.howToReceive.answer",
   },
   {
     id: "5",
-    categoria: "Pagamento",
-    pergunta: "Quanto tempo tenho para pagar?",
-    resposta:
-      "Para PIX e Cartão, o pagamento deve ser realizado imediatamente. Para Boleto, você tem 3 dias corridos a partir da data de geração. Após esse período, o boleto expira e você precisará realizar uma nova compra.",
+    categoriaKey: "help.categories.payment",
+    perguntaKey: "help.faq.payment.timeToPay",
+    respostaKey: "help.faq.payment.timeToPay.answer",
   },
   {
     id: "6",
-    categoria: "Pagamento",
-    pergunta: "Meu pagamento não foi confirmado, o que fazer?",
-    resposta:
-      "Pagamentos via PIX podem levar até 2 minutos para serem confirmados. Se após esse período o pagamento ainda estiver pendente, verifique se o pagamento foi realizado corretamente. Para cartões, entre em contato conosco se houver problemas. Para boletos, verifique se o pagamento foi realizado dentro do prazo de validade.",
+    categoriaKey: "help.categories.payment",
+    perguntaKey: "help.faq.payment.notConfirmed",
+    respostaKey: "help.faq.payment.notConfirmed.answer",
   },
   {
     id: "7",
-    categoria: "Pagamento",
-    pergunta: "Posso cancelar uma compra?",
-    resposta:
-      "Cancelamentos podem ser solicitados através do nosso suporte. O reembolso seguirá nossa política de cancelamento, que varia conforme a proximidade da data do evento. Entre em contato conosco para mais informações.",
+    categoriaKey: "help.categories.payment",
+    perguntaKey: "help.faq.payment.cancel",
+    respostaKey: "help.faq.payment.cancel.answer",
   },
   {
     id: "8",
-    categoria: "Conta e Perfil",
-    pergunta: "Preciso criar uma conta para comprar?",
-    resposta:
-      "Não é necessário criar uma conta. Você pode comprar ingressos informando seus dados pessoais. No entanto, ao fazer uma compra, seus dados são salvos e você pode acessar seus ingressos usando seu email ou CPF na seção 'Meus Ingressos'.",
+    categoriaKey: "help.categories.account",
+    perguntaKey: "help.faq.account.needAccount",
+    respostaKey: "help.faq.account.needAccount.answer",
   },
   {
     id: "9",
-    categoria: "Conta e Perfil",
-    pergunta: "Como acesso meus ingressos?",
-    resposta:
-      "Acesse a seção 'Meus Ingressos' no menu e informe seu email ou CPF usado na compra. Você verá todas as suas compras e poderá visualizar os detalhes, QR Codes e códigos de pagamento quando necessário.",
+    categoriaKey: "help.categories.account",
+    perguntaKey: "help.faq.account.accessTickets",
+    respostaKey: "help.faq.account.accessTickets.answer",
   },
   {
     id: "10",
-    categoria: "Conta e Perfil",
-    pergunta: "Como atualizo meus dados pessoais?",
-    resposta:
-      "Acesse a seção 'Meu Perfil' no menu, informe seu email ou CPF para buscar seu perfil, e então você poderá editar suas informações pessoais como nome, telefone e CPF.",
+    categoriaKey: "help.categories.account",
+    perguntaKey: "help.faq.account.updateData",
+    respostaKey: "help.faq.account.updateData.answer",
   },
   {
     id: "11",
-    categoria: "Eventos",
-    pergunta: "Onde posso ver os eventos disponíveis?",
-    resposta:
-      "Na página inicial você encontrará os eventos em destaque. Para ver todos os eventos disponíveis, acesse a seção 'Eventos' no menu principal ou use a barra de busca para encontrar eventos específicos.",
+    categoriaKey: "help.categories.events",
+    perguntaKey: "help.faq.events.whereToSee",
+    respostaKey: "help.faq.events.whereToSee.answer",
   },
   {
     id: "12",
-    categoria: "Eventos",
-    pergunta: "Os ingressos podem esgotar?",
-    resposta:
-      "Sim, cada tipo de ingresso tem uma quantidade limitada. Recomendamos realizar a compra assim que os ingressos forem disponibilizados para garantir sua participação no evento.",
+    categoriaKey: "help.categories.events",
+    perguntaKey: "help.faq.events.soldOut",
+    respostaKey: "help.faq.events.soldOut.answer",
   },
   {
     id: "13",
-    categoria: "Segurança",
-    pergunta: "Meus dados estão seguros?",
-    resposta:
-      "Sim! Utilizamos criptografia para proteger todas as informações pessoais e de pagamento. Nunca compartilhamos seus dados com terceiros sem sua autorização. Para mais informações, consulte nossa política de privacidade.",
+    categoriaKey: "help.categories.security",
+    perguntaKey: "help.faq.security.dataSafe",
+    respostaKey: "help.faq.security.dataSafe.answer",
   },
   {
     id: "14",
-    categoria: "Segurança",
-    pergunta: "O que fazer se perder meu código de compra?",
-    resposta:
-      "Não se preocupe! Você pode acessar seus ingressos a qualquer momento na seção 'Meus Ingressos' usando seu email ou CPF. Todos os seus ingressos e códigos estarão disponíveis lá.",
+    categoriaKey: "help.categories.security",
+    perguntaKey: "help.faq.security.lostCode",
+    respostaKey: "help.faq.security.lostCode.answer",
   },
 ];
 
-const categorias = [
-  "Todos",
-  "Compra de Ingressos",
-  "Pagamento",
-  "Conta e Perfil",
-  "Eventos",
-  "Segurança",
+const categoriaKeys = [
+  "help.categories.all",
+  "help.categories.tickets",
+  "help.categories.payment",
+  "help.categories.account",
+  "help.categories.events",
+  "help.categories.security",
 ];
 
 export default function AjudaPage() {
+  const { t } = useI18n();
   const [busca, setBusca] = useState("");
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState("Todos");
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState(
+    "help.categories.all"
+  );
   const [faqsAbertos, setFaqsAbertos] = useState<Set<string>>(new Set());
 
   const toggleFaq = (id: string) => {
@@ -166,53 +154,63 @@ export default function AjudaPage() {
     setFaqsAbertos(novosAbertos);
   };
 
-  const faqsFiltrados = faqs.filter((faq) => {
+  const faqsComTraducao = useMemo(() => {
+    return faqs.map((faq) => ({
+      ...faq,
+      pergunta: t(faq.perguntaKey),
+      resposta: t(faq.respostaKey),
+      categoria: t(faq.categoriaKey),
+    }));
+  }, [t]);
+
+  const faqsFiltrados = faqsComTraducao.filter((faq) => {
     const matchBusca =
       busca === "" ||
       faq.pergunta.toLowerCase().includes(busca.toLowerCase()) ||
       faq.resposta.toLowerCase().includes(busca.toLowerCase());
     const matchCategoria =
-      categoriaSelecionada === "Todos" ||
-      faq.categoria === categoriaSelecionada;
+      categoriaSelecionada === "help.categories.all" ||
+      faq.categoriaKey === categoriaSelecionada;
     return matchBusca && matchCategoria;
   });
 
-  const faqsPorCategoria = categorias
-    .filter((cat) => cat !== "Todos")
-    .map((categoria) => ({
-      categoria,
-      faqs: faqsFiltrados.filter((faq) => faq.categoria === categoria),
+  const faqsPorCategoria = categoriaKeys
+    .filter((key) => key !== "help.categories.all")
+    .map((categoriaKey) => ({
+      categoriaKey,
+      categoria: t(categoriaKey),
+      faqs: faqsFiltrados.filter((faq) => faq.categoriaKey === categoriaKey),
     }))
     .filter((grupo) => grupo.faqs.length > 0);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-purple-50 to-pink-50">
+    <main className="flex flex-col flex-1 bg-gradient-to-b from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
       <Navbar />
-      <div className="container mx-auto px-4 py-24 max-w-6xl">
+      <div className="flex-1 container mx-auto px-4 py-24 max-w-6xl">
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-sky-500 to-pink-500 rounded-full mb-4">
             <HelpCircle className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Central de Ajuda
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+            {t("help.title")}
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Encontre respostas para suas dúvidas ou entre em contato conosco
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            {t("help.subtitle")}
           </p>
         </div>
 
         {/* Busca */}
-        <Card className="mb-8">
+        <Card className="mb-8 dark:bg-gray-800 dark:border-gray-700">
           <CardContent className="pt-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 type="search"
-                placeholder="Busque por palavras-chave..."
+                placeholder={t("help.search.placeholder")}
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
-                className="pl-10"
+                className="pl-10 dark:bg-gray-900 dark:border-gray-700"
               />
             </div>
           </CardContent>
@@ -220,20 +218,20 @@ export default function AjudaPage() {
 
         {/* Filtros por categoria */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {categorias.map((categoria) => (
+          {categoriaKeys.map((categoriaKey) => (
             <Button
-              key={categoria}
+              key={categoriaKey}
               variant={
-                categoriaSelecionada === categoria ? "default" : "outline"
+                categoriaSelecionada === categoriaKey ? "default" : "outline"
               }
-              onClick={() => setCategoriaSelecionada(categoria)}
+              onClick={() => setCategoriaSelecionada(categoriaKey)}
               className={
-                categoriaSelecionada === categoria
+                categoriaSelecionada === categoriaKey
                   ? "bg-gradient-to-r from-sky-500 to-pink-500 hover:from-sky-600 hover:to-pink-600"
-                  : ""
+                  : "dark:border-gray-700 dark:text-gray-300"
               }
             >
-              {categoria}
+              {t(categoriaKey)}
             </Button>
           ))}
         </div>
@@ -242,8 +240,8 @@ export default function AjudaPage() {
         {faqsFiltrados.length > 0 ? (
           <div className="space-y-6 mb-12">
             {faqsPorCategoria.map((grupo) => (
-              <div key={grupo.categoria}>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <div key={grupo.categoriaKey}>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                   {grupo.categoria}
                 </h2>
                 <div className="space-y-3">
@@ -252,14 +250,14 @@ export default function AjudaPage() {
                     return (
                       <Card
                         key={faq.id}
-                        className="hover:shadow-md transition-shadow"
+                        className="hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700"
                       >
                         <CardHeader
                           className="cursor-pointer"
                           onClick={() => toggleFaq(faq.id)}
                         >
                           <div className="flex items-start justify-between gap-4">
-                            <CardTitle className="text-lg flex-1">
+                            <CardTitle className="text-lg flex-1 dark:text-white">
                               {faq.pergunta}
                             </CardTitle>
                             <Button
@@ -277,7 +275,7 @@ export default function AjudaPage() {
                         </CardHeader>
                         {estaAberto && (
                           <CardContent>
-                            <p className="text-gray-600 leading-relaxed">
+                            <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                               {faq.resposta}
                             </p>
                           </CardContent>
@@ -290,11 +288,11 @@ export default function AjudaPage() {
             ))}
           </div>
         ) : (
-          <Card className="mb-12">
+          <Card className="mb-12 dark:bg-gray-800 dark:border-gray-700">
             <CardContent className="pt-6 text-center py-12">
               <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">
-                Nenhuma pergunta encontrada com os filtros selecionados.
+              <p className="text-gray-600 dark:text-gray-300">
+                {t("help.noResults")}
               </p>
             </CardContent>
           </Card>
@@ -302,20 +300,22 @@ export default function AjudaPage() {
 
         {/* Guias Rápidos */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Guias Rápidos
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+            {t("help.guides.title")}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link href="/ingressos">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full dark:bg-gray-800 dark:border-gray-700">
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-purple-100 rounded-lg mb-3">
-                      <Ticket className="w-6 h-6 text-purple-600" />
+                    <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg mb-3">
+                      <Ticket className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                     </div>
-                    <h3 className="font-semibold mb-1">Meus Ingressos</h3>
-                    <p className="text-sm text-gray-600">
-                      Acesse seus ingressos comprados
+                    <h3 className="font-semibold mb-1 dark:text-white">
+                      {t("help.guides.myTickets.title")}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {t("help.guides.myTickets.desc")}
                     </p>
                   </div>
                 </CardContent>
@@ -323,15 +323,17 @@ export default function AjudaPage() {
             </Link>
 
             <Link href="/perfil">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full dark:bg-gray-800 dark:border-gray-700">
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-sky-100 rounded-lg mb-3">
-                      <User className="w-6 h-6 text-sky-600" />
+                    <div className="p-3 bg-sky-100 dark:bg-sky-900 rounded-lg mb-3">
+                      <User className="w-6 h-6 text-sky-600 dark:text-sky-400" />
                     </div>
-                    <h3 className="font-semibold mb-1">Meu Perfil</h3>
-                    <p className="text-sm text-gray-600">
-                      Gerencie suas informações
+                    <h3 className="font-semibold mb-1 dark:text-white">
+                      {t("help.guides.myProfile.title")}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {t("help.guides.myProfile.desc")}
                     </p>
                   </div>
                 </CardContent>
@@ -339,15 +341,17 @@ export default function AjudaPage() {
             </Link>
 
             <Link href="/configuracoes">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full dark:bg-gray-800 dark:border-gray-700">
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-pink-100 rounded-lg mb-3">
-                      <Settings className="w-6 h-6 text-pink-600" />
+                    <div className="p-3 bg-pink-100 dark:bg-pink-900 rounded-lg mb-3">
+                      <Settings className="w-6 h-6 text-pink-600 dark:text-pink-400" />
                     </div>
-                    <h3 className="font-semibold mb-1">Configurações</h3>
-                    <p className="text-sm text-gray-600">
-                      Ajuste suas preferências
+                    <h3 className="font-semibold mb-1 dark:text-white">
+                      {t("help.guides.settings.title")}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {t("help.guides.settings.desc")}
                     </p>
                   </div>
                 </CardContent>
@@ -355,15 +359,17 @@ export default function AjudaPage() {
             </Link>
 
             <Link href="/eventos">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full dark:bg-gray-800 dark:border-gray-700">
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-green-100 rounded-lg mb-3">
-                      <FileText className="w-6 h-6 text-green-600" />
+                    <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg mb-3">
+                      <FileText className="w-6 h-6 text-green-600 dark:text-green-400" />
                     </div>
-                    <h3 className="font-semibold mb-1">Ver Eventos</h3>
-                    <p className="text-sm text-gray-600">
-                      Explore eventos disponíveis
+                    <h3 className="font-semibold mb-1 dark:text-white">
+                      {t("help.guides.viewEvents.title")}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {t("help.guides.viewEvents.desc")}
                     </p>
                   </div>
                 </CardContent>
@@ -373,68 +379,77 @@ export default function AjudaPage() {
         </div>
 
         {/* Contato */}
-        <Card className="bg-gradient-to-r from-sky-50 to-pink-50 border-2 border-sky-200">
+        <Card className="bg-gradient-to-r from-sky-50 to-pink-50 dark:from-gray-800 dark:to-gray-800 border-2 border-sky-200 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 dark:text-white">
               <MessageCircle className="w-5 h-5" />
-              Ainda precisa de ajuda?
+              {t("help.contact.title")}
             </CardTitle>
-            <CardDescription>
-              Entre em contato conosco através dos canais abaixo
+            <CardDescription className="dark:text-gray-300">
+              {t("help.contact.subtitle")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-white rounded-lg">
-                  <Mail className="w-5 h-5 text-sky-600" />
+                <div className="p-2 bg-white dark:bg-gray-900 rounded-lg">
+                  <Mail className="w-5 h-5 text-sky-600 dark:text-sky-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Email</h3>
-                  <p className="text-sm text-gray-600">
-                    suporte@bluehour.com.br
+                  <h3 className="font-semibold mb-1 dark:text-white">
+                    {t("help.contact.email")}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    blue.hour5@gmail.com
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Resposta em até 24h
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-white rounded-lg">
-                  <Phone className="w-5 h-5 text-pink-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1">Telefone</h3>
-                  <p className="text-sm text-gray-600">(92) 99999-9999</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Seg-Sex, 9h às 18h
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {t("help.contact.emailResponse")}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-white rounded-lg">
-                  <Clock className="w-5 h-5 text-purple-600" />
+                <div className="p-2 bg-white dark:bg-gray-900 rounded-lg">
+                  <Phone className="w-5 h-5 text-pink-600 dark:text-pink-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Horário de Atendimento</h3>
-                  <p className="text-sm text-gray-600">Segunda a Sexta</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    9h às 18h (horário de Manaus)
+                  <h3 className="font-semibold mb-1 dark:text-white">
+                    {t("help.contact.phone")}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    +55 (92) 99244-0502
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {t("help.contact.phoneHours")}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-white dark:bg-gray-900 rounded-lg">
+                  <Clock className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1 dark:text-white">
+                    {t("help.contact.hours")}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {t("help.contact.hoursDesc")}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {t("help.contact.hoursTime")}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
+            <div className="mt-6 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm text-gray-700">
-                    <strong>Dica:</strong> Antes de entrar em contato, verifique
-                    se sua dúvida já está respondida na seção de perguntas
-                    frequentes acima. Isso pode agilizar o atendimento!
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    <strong>{t("help.contact.tip")}</strong>{" "}
+                    {t("help.contact.tipText")}
                   </p>
                 </div>
               </div>
@@ -444,38 +459,42 @@ export default function AjudaPage() {
 
         {/* Informações Importantes */}
         <div className="mt-12 grid md:grid-cols-2 gap-6">
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 dark:text-white">
                 <Shield className="w-5 h-5" />
-                Política de Privacidade
+                {t("help.privacy.title")}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                Seus dados estão protegidos. Conheça nossa política de
-                privacidade e termos de uso.
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                {t("help.privacy.desc")}
               </p>
-              <Button variant="outline" className="w-full">
-                Ver Política Completa
+              <Button
+                variant="outline"
+                className="w-full dark:border-gray-700 dark:text-gray-300"
+              >
+                {t("help.privacy.button")}
               </Button>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 dark:text-white">
                 <CheckCircle2 className="w-5 h-5" />
-                Termos de Uso
+                {t("help.terms.title")}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                Leia nossos termos e condições antes de utilizar nossos
-                serviços.
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                {t("help.terms.desc")}
               </p>
-              <Button variant="outline" className="w-full">
-                Ver Termos Completos
+              <Button
+                variant="outline"
+                className="w-full dark:border-gray-700 dark:text-gray-300"
+              >
+                {t("help.terms.button")}
               </Button>
             </CardContent>
           </Card>

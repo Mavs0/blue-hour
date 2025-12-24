@@ -11,6 +11,8 @@ import {
   criarNotificacaoPagamento,
   criarNotificacaoPagamentoPendente,
 } from "@/lib/notificacoes";
+import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
+import { sanitizeString } from "@/lib/sanitize";
 import { randomBytes } from "crypto";
 
 // Forçar rota dinâmica para evitar coleta de dados estáticos durante o build
@@ -19,18 +21,34 @@ export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 5 compras por minuto por IP
+    const clientIP = getClientIP(request);
+    if (!checkRateLimit(clientIP, 5, 60000)) {
+      return NextResponse.json(
+        {
+          error:
+            "Muitas tentativas. Aguarde um momento antes de tentar novamente.",
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { eventoId, ingressoId, ...dadosCliente } = body;
+
+    // Sanitizar IDs
+    const eventoIdSanitizado = sanitizeString(eventoId || "");
+    const ingressoIdSanitizado = sanitizeString(ingressoId || "");
 
     // Validar dados do cliente
     const dadosValidados = compraIngressoSchema.parse(dadosCliente);
 
     // Verificar se o evento e ingresso existem e estão ativos
     const evento = await prisma.evento.findUnique({
-      where: { id: eventoId },
+      where: { id: eventoIdSanitizado },
       include: {
         ingressos: {
-          where: { id: ingressoId },
+          where: { id: ingressoIdSanitizado },
         },
       },
     });

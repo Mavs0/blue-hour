@@ -73,6 +73,7 @@ export async function PUT(
         tipo: dadosValidados.tipo,
         preco: dadosValidados.preco,
         quantidade: dadosValidados.quantidade,
+        kit: dadosValidados.kit || null,
       },
       include: {
         evento: {

@@ -279,6 +279,17 @@ export default function AdminIngressosPage() {
                             {disponivel} / {ingresso.quantidade}
                           </span>
                         </div>
+                        {ingresso.kit && (
+                          <div className="pt-2 border-t">
+                            <span className="text-gray-600 flex items-center gap-2 mb-1">
+                              <Ticket className="w-4 h-4" />
+                              Kit Incluído:
+                            </span>
+                            <p className="text-xs text-gray-700 whitespace-pre-line bg-gray-50 p-2 rounded">
+                              {ingresso.kit}
+                            </p>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between">
                           <span className="text-gray-600 flex items-center gap-2">
                             <Ticket className="w-4 h-4" />

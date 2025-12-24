@@ -71,6 +71,18 @@ async function ConfirmacaoContent({ codigo }: { codigo: string }) {
                   <span className="text-gray-600">Tipo de Ingresso:</span>
                   <span className="font-semibold">{venda.ingresso.tipo}</span>
                 </div>
+                {"kit" in venda.ingresso && venda.ingresso.kit && (
+                  <div>
+                    <span className="text-gray-600 block mb-2">
+                      Kit Incluído:
+                    </span>
+                    <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                      <p className="text-sm text-purple-800 whitespace-pre-line">
+                        {String(venda.ingresso.kit)}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Quantidade:</span>
                   <span className="font-semibold">{venda.quantidade}</span>

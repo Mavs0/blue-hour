@@ -1,18 +1,30 @@
 import { z } from "zod";
+import { validarCPF, limparCPF } from "./cpf-validator";
+import { sanitizeString, sanitizeEmail, sanitizeNumber } from "./sanitize";
 
 export const compraIngressoSchema = z
   .object({
-    nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-    email: z.string().email("Email inválido"),
+    nome: z
+      .string()
+      .min(3, "Nome deve ter pelo menos 3 caracteres")
+      .max(100, "Nome muito longo")
+      .transform((val) => sanitizeString(val, 100)),
+    email: z
+      .string()
+      .email("Email inválido")
+      .transform((val) => sanitizeEmail(val)),
     telefone: z
       .string()
       .min(10, "Telefone inválido")
-      .regex(/^[\d\s()-]+$/, "Telefone deve conter apenas números"),
+      .regex(/^[\d\s()-]+$/, "Telefone deve conter apenas números")
+      .transform((val) => sanitizeNumber(val)),
     cpf: z
       .string()
       .min(11, "CPF deve ter 11 dígitos")
-      .max(11, "CPF deve ter 11 dígitos")
-      .regex(/^\d+$/, "CPF deve conter apenas números"),
+      .max(14, "CPF inválido")
+      .transform((val) => limparCPF(val))
+      .refine((val) => val.length === 11, "CPF deve ter 11 dígitos")
+      .refine((val) => validarCPF(val), "CPF inválido"),
     quantidade: z
       .number()
       .min(1, "Quantidade mínima é 1")
@@ -25,10 +37,22 @@ export const compraIngressoSchema = z
       }
     ),
     // Campos opcionais para cartão
-    numeroCartao: z.string().optional(),
-    nomeCartao: z.string().optional(),
-    validadeCartao: z.string().optional(),
-    cvvCartao: z.string().optional(),
+    numeroCartao: z
+      .string()
+      .optional()
+      .transform((val) => (val ? sanitizeNumber(val) : val)),
+    nomeCartao: z
+      .string()
+      .optional()
+      .transform((val) => (val ? sanitizeString(val, 50) : val)),
+    validadeCartao: z
+      .string()
+      .optional()
+      .transform((val) => (val ? sanitizeString(val, 5) : val)),
+    cvvCartao: z
+      .string()
+      .optional()
+      .transform((val) => (val ? sanitizeNumber(val) : val)),
     parcelas: z.number().optional(),
   })
   .refine(
@@ -59,6 +83,7 @@ export const ingressoSchema = z.object({
   tipo: z.string().min(1, "Tipo de ingresso é obrigatório"),
   preco: z.number().min(0.01, "Preço deve ser maior que zero"),
   quantidade: z.number().min(1, "Quantidade mínima é 1").int(),
+  kit: z.string().optional(), // Descrição do kit (nome do elemento, quantidade, observações)
 });
 
 export const eventoSchema = z.object({

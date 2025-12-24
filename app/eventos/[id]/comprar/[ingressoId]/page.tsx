@@ -86,9 +86,19 @@ export default async function ComprarIngressoPage({
               <p className="text-sm text-gray-600 mb-2">
                 Disponíveis: {disponivel} de {ingresso.quantidade}
               </p>
-              <p className="text-2xl font-bold text-purple-600">
+              <p className="text-2xl font-bold text-purple-600 mb-4">
                 R$ {ingresso.preco.toFixed(2)}
               </p>
+              {ingresso.kit && (
+                <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                  <p className="text-xs font-semibold text-purple-900 mb-2">
+                    🎁 Kit Incluído:
+                  </p>
+                  <p className="text-xs text-purple-800 whitespace-pre-line">
+                    {ingresso.kit}
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

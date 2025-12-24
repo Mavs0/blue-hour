@@ -1,25 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
+import { validarCPF, limparCPF } from "@/lib/cpf-validator";
+import { sanitizeString, sanitizeEmail, sanitizeNumber } from "@/lib/sanitize";
 
 const atualizarPerfilSchema = z.object({
-  nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  telefone: z.string().optional(),
+  nome: z
+    .string()
+    .min(2, "Nome deve ter pelo menos 2 caracteres")
+    .max(100, "Nome muito longo")
+    .transform((val) => sanitizeString(val, 100)),
+  telefone: z
+    .string()
+    .optional()
+    .transform((val) => (val ? sanitizeNumber(val) : val)),
   cpf: z
     .string()
     .optional()
-    .refine(
-      (val) => !val || val.replace(/\D/g, "").length === 11,
-      "CPF deve ter 11 dígitos"
-    ),
+    .transform((val) => (val ? limparCPF(val) : val))
+    .refine((val) => !val || val.length === 11, "CPF deve ter 11 dígitos")
+    .refine((val) => !val || validarCPF(val), "CPF inválido"),
 });
 
 // GET - Buscar perfil por email ou CPF
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting: 10 buscas por minuto por IP
+    const clientIP = getClientIP(request);
+    if (!checkRateLimit(clientIP, 10, 60000)) {
+      return NextResponse.json(
+        {
+          error:
+            "Muitas tentativas. Aguarde um momento antes de tentar novamente.",
+        },
+        { status: 429 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
-    const email = searchParams.get("email");
-    const cpf = searchParams.get("cpf");
+    const email = searchParams.get("email")
+      ? sanitizeEmail(searchParams.get("email")!)
+      : null;
+    const cpf = searchParams.get("cpf")
+      ? limparCPF(searchParams.get("cpf")!)
+      : null;
 
     if (!email && !cpf) {
       return NextResponse.json(
@@ -30,10 +55,7 @@ export async function GET(request: NextRequest) {
 
     const cliente = await prisma.cliente.findFirst({
       where: {
-        OR: [
-          ...(email ? [{ email }] : []),
-          ...(cpf ? [{ cpf: cpf.replace(/\D/g, "") }] : []),
-        ],
+        OR: [...(email ? [{ email }] : []), ...(cpf ? [{ cpf }] : [])],
       },
       select: {
         id: true,

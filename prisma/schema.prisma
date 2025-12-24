@@ -34,6 +34,7 @@ model Ingresso {
   preco       Float
   quantidade  Int      @default(0)
   vendidos    Int      @default(0)
+  kit         String?  // Descrição do kit incluído no ingresso (nome do elemento, quantidade, observações)
   ativo       Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

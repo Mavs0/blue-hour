@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -69,6 +70,7 @@ export function IngressoForm({
       tipo: "",
       preco: 0,
       quantidade: 0,
+      kit: "",
       eventoId: initialEventoId || "",
     },
   });
@@ -100,6 +102,7 @@ export function IngressoForm({
         setValue("tipo", data.ingresso.tipo);
         setValue("preco", data.ingresso.preco);
         setValue("quantidade", data.ingresso.quantidade);
+        setValue("kit", data.ingresso.kit || "");
         if (!ingressoId) {
           setSelectedEventoId(data.ingresso.eventoId);
           setValue("eventoId", data.ingresso.eventoId);
@@ -123,11 +126,17 @@ export function IngressoForm({
       const method = ingressoId ? "PUT" : "POST";
 
       const body = ingressoId
-        ? { tipo: data.tipo, preco: data.preco, quantidade: data.quantidade }
+        ? {
+            tipo: data.tipo,
+            preco: data.preco,
+            quantidade: data.quantidade,
+            kit: data.kit || null,
+          }
         : {
             tipo: data.tipo,
             preco: data.preco,
             quantidade: data.quantidade,
+            kit: data.kit || null,
             eventoId: data.eventoId!,
           };
 
@@ -250,6 +259,24 @@ export function IngressoForm({
                 </p>
               )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="kit">Kit Incluído</Label>
+            <Textarea
+              id="kit"
+              {...register("kit")}
+              placeholder="Descreva o que está incluído no kit deste ingresso. Exemplo:&#10;- Lightstick oficial: 1 unidade&#10;- Photocard exclusivo: 2 unidades&#10;- Pôster autografado: 1 unidade&#10;- Observação: Itens sujeitos à disponibilidade"
+              rows={6}
+              className="resize-none"
+            />
+            <p className="text-xs text-gray-500">
+              Descreva cada item incluído no kit, com nome e quantidade.
+              Adicione observações se necessário.
+            </p>
+            {errors.kit && (
+              <p className="text-sm text-red-500">{errors.kit.message}</p>
+            )}
           </div>
 
           {error && (

@@ -109,6 +109,16 @@ export default async function EventoDetalhesPage({
                         R$ {ingresso.preco.toFixed(2)}
                       </p>
                     </div>
+                    {ingresso.kit && (
+                      <div className="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                        <p className="text-xs font-semibold text-purple-900 mb-2">
+                          🎁 Kit Incluído:
+                        </p>
+                        <p className="text-xs text-purple-800 whitespace-pre-line">
+                          {ingresso.kit}
+                        </p>
+                      </div>
+                    )}
                     <Link href={`/eventos/${evento.id}/comprar/${ingresso.id}`}>
                       <Button className="w-full">Comprar Ingresso</Button>
                     </Link>

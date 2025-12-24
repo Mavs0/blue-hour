@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
         tipo: dadosValidados.tipo,
         preco: dadosValidados.preco,
         quantidade: dadosValidados.quantidade,
+        kit: dadosValidados.kit || null,
         vendidos: 0,
         ativo: true,
       },

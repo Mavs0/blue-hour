@@ -1,13 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
+import { sanitizeEmail } from "@/lib/sanitize";
+import { limparCPF } from "@/lib/cpf-validator";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting: 10 buscas por minuto por IP
+    const clientIP = getClientIP(request);
+    if (!checkRateLimit(clientIP, 10, 60000)) {
+      return NextResponse.json(
+        {
+          error:
+            "Muitas tentativas. Aguarde um momento antes de tentar novamente.",
+        },
+        { status: 429 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
-    const email = searchParams.get("email");
-    const cpf = searchParams.get("cpf");
+    const email = searchParams.get("email")
+      ? sanitizeEmail(searchParams.get("email")!)
+      : null;
+    const cpf = searchParams.get("cpf")
+      ? limparCPF(searchParams.get("cpf")!)
+      : null;
 
     if (!email && !cpf) {
       return NextResponse.json(
@@ -19,10 +38,7 @@ export async function GET(request: NextRequest) {
     // Buscar cliente por email ou CPF
     const cliente = await prisma.cliente.findFirst({
       where: {
-        OR: [
-          ...(email ? [{ email }] : []),
-          ...(cpf ? [{ cpf: cpf.replace(/\D/g, "") }] : []),
-        ],
+        OR: [...(email ? [{ email }] : []), ...(cpf ? [{ cpf }] : [])],
       },
     });
 
