@@ -136,12 +136,6 @@ export default function AdminLoginPage() {
               )}
             </Button>
           </form>
-
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-xs text-center text-gray-500">
-              Credenciais padrão: admin / admin123
-            </p>
-          </div>
         </CardContent>
       </Card>
     </main>
