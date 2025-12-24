@@ -17,15 +17,22 @@ export default async function EventoDetalhesPage({
 }: {
   params: { id: string };
 }) {
-  const evento = await prisma.evento.findUnique({
-    where: { id: params.id },
-    include: {
-      ingressos: {
-        where: { ativo: true },
-        orderBy: { preco: "asc" },
+  let evento = null;
+
+  try {
+    evento = await prisma.evento.findUnique({
+      where: { id: params.id },
+      include: {
+        ingressos: {
+          where: { ativo: true },
+          orderBy: { preco: "asc" },
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    console.error("Erro ao buscar evento:", error);
+    notFound();
+  }
 
   if (!evento || !evento.ativo) {
     notFound();

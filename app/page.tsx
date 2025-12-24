@@ -22,19 +22,45 @@ import { Footer } from "@/components/footer";
 
 export const dynamic = "force-dynamic";
 
+type EventoComIngressos = {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  data: Date;
+  local: string;
+  cidade: string;
+  imagemUrl: string | null;
+  ativo: boolean;
+  ingressos: Array<{
+    id: string;
+    tipo: string;
+    preco: number;
+    quantidade: number;
+    vendidos: number;
+    ativo: boolean;
+  }>;
+};
+
 export default async function Home() {
-  const eventos = await prisma.evento.findMany({
-    where: { ativo: true },
-    include: {
-      ingressos: {
-        where: { ativo: true },
+  let eventos: EventoComIngressos[] = [];
+
+  try {
+    eventos = await prisma.evento.findMany({
+      where: { ativo: true },
+      include: {
+        ingressos: {
+          where: { ativo: true },
+        },
       },
-    },
-    orderBy: {
-      data: "asc",
-    },
-    take: 6,
-  });
+      orderBy: {
+        data: "asc",
+      },
+      take: 6,
+    });
+  } catch (error) {
+    console.error("Erro ao buscar eventos:", error);
+    // Continua com array vazio para não quebrar a página
+  }
 
   const formatarData = (data: Date) => {
     return new Date(data).toLocaleDateString("pt-BR", {
@@ -51,7 +77,7 @@ export default async function Home() {
     });
   };
 
-  const obterPrecoMinimo = (ingressos: any[]) => {
+  const obterPrecoMinimo = (ingressos: Array<{ preco: number }>) => {
     if (ingressos.length === 0) return null;
     const precos = ingressos.map((i) => i.preco);
     return Math.min(...precos);

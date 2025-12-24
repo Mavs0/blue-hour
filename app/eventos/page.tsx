@@ -11,18 +11,44 @@ import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
+type EventoComIngressos = {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  data: Date;
+  local: string;
+  cidade: string;
+  imagemUrl: string | null;
+  ativo: boolean;
+  ingressos: Array<{
+    id: string;
+    tipo: string;
+    preco: number;
+    quantidade: number;
+    vendidos: number;
+    ativo: boolean;
+  }>;
+};
+
 export default async function EventosPage() {
-  const eventos = await prisma.evento.findMany({
-    where: { ativo: true },
-    include: {
-      ingressos: {
-        where: { ativo: true },
+  let eventos: EventoComIngressos[] = [];
+
+  try {
+    eventos = await prisma.evento.findMany({
+      where: { ativo: true },
+      include: {
+        ingressos: {
+          where: { ativo: true },
+        },
       },
-    },
-    orderBy: {
-      data: "asc",
-    },
-  });
+      orderBy: {
+        data: "asc",
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao buscar eventos:", error);
+    // Continua com array vazio para não quebrar a página
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-purple-50 to-pink-50">
