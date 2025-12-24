@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -99,7 +99,7 @@ export default function AdminVendasPage() {
     totalPages: 0,
   });
 
-  const fetchVendas = async () => {
+  const fetchVendas = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -128,11 +128,11 @@ export default function AdminVendasPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, pagination.page, pagination.limit]);
 
   useEffect(() => {
     fetchVendas();
-  }, [filters, pagination.page]);
+  }, [fetchVendas]);
 
   const formatarData = (data: string) => {
     return new Date(data).toLocaleDateString("pt-BR", {

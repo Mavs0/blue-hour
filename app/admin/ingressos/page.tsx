@@ -40,6 +40,7 @@ interface Ingresso {
   quantidade: number;
   vendidos: number;
   ativo: boolean;
+  kit: string | null;
   evento: {
     id: string;
     nome: string;

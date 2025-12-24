@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ingressoSchema, type IngressoInput } from "@/lib/validations";
@@ -75,14 +75,7 @@ export function IngressoForm({
     },
   });
 
-  useEffect(() => {
-    fetchEventos();
-    if (ingressoId) {
-      fetchIngresso();
-    }
-  }, [ingressoId]);
-
-  const fetchEventos = async () => {
+  const fetchEventos = useCallback(async () => {
     try {
       const response = await fetch("/api/eventos");
       const data = await response.json();
@@ -90,9 +83,9 @@ export function IngressoForm({
     } catch (error) {
       console.error("Erro ao buscar eventos:", error);
     }
-  };
+  }, []);
 
-  const fetchIngresso = async () => {
+  const fetchIngresso = useCallback(async () => {
     if (!ingressoId) return;
     setLoading(true);
     try {
@@ -113,7 +106,14 @@ export function IngressoForm({
     } finally {
       setLoading(false);
     }
-  };
+  }, [ingressoId, setValue]);
+
+  useEffect(() => {
+    fetchEventos();
+    if (ingressoId) {
+      fetchIngresso();
+    }
+  }, [ingressoId, fetchEventos, fetchIngresso]);
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
