@@ -5,6 +5,12 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const adminSession = request.cookies.get("admin_session");
 
+  // Criar resposta
+  const response = NextResponse.next();
+
+  // Adicionar header com pathname para uso no layout
+  response.headers.set("x-pathname", pathname);
+
   // Permitir acesso à página de login sem autenticação
   if (pathname === "/admin/login") {
     // Se já estiver autenticado, redirecionar para o dashboard
@@ -14,7 +20,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
     // Permitir acesso à página de login
-    return NextResponse.next();
+    return response;
   }
 
   // Proteger todas as outras rotas /admin
@@ -26,7 +32,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
