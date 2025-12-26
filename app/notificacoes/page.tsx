@@ -167,7 +167,9 @@ export default function NotificacoesPage() {
       }
 
       // Atualizar estado local
-      setNotificacoes((prev) => prev.map((notif) => ({ ...notif, lida: true })));
+      setNotificacoes((prev) =>
+        prev.map((notif) => ({ ...notif, lida: true }))
+      );
       setNaoLidasCount(0);
     } catch (err) {
       setError("Erro ao marcar notificações como lidas");
@@ -193,13 +195,13 @@ export default function NotificacoesPage() {
   const obterCorPorTipo = (tipo: string) => {
     switch (tipo) {
       case "success":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800";
       case "warning":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+        return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800";
       case "error":
-        return "bg-red-100 text-red-800 border-red-200";
+        return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800";
       default:
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800";
     }
   };
 
@@ -224,27 +226,27 @@ export default function NotificacoesPage() {
   };
 
   return (
-    <main className="flex flex-col flex-1 bg-gradient-to-b from-purple-50 to-pink-50">
+    <main className="flex flex-col flex-1 bg-gradient-to-b from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
       <Navbar />
       <div className="flex-1 container mx-auto px-4 py-24 max-w-4xl">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             Notificações
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             Visualize e gerencie suas notificações
           </p>
         </div>
 
         {/* Busca inicial */}
         {modoBusca && (
-          <Card className="mb-8">
+          <Card className="mb-8 dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 dark:text-white">
                 <Bell className="w-5 h-5" />
                 Acessar Notificações
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="dark:text-gray-300">
                 Informe seu email ou CPF para visualizar suas notificações
               </CardDescription>
             </CardHeader>
@@ -252,7 +254,12 @@ export default function NotificacoesPage() {
               <form onSubmit={handleBuscar} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="buscar-email">Email</Label>
+                    <Label
+                      htmlFor="buscar-email"
+                      className="dark:text-gray-300"
+                    >
+                      Email
+                    </Label>
                     <Input
                       id="buscar-email"
                       type="email"
@@ -260,10 +267,13 @@ export default function NotificacoesPage() {
                       value={buscarEmail}
                       onChange={(e) => setBuscarEmail(e.target.value)}
                       disabled={loading}
+                      className="dark:bg-gray-900 dark:border-gray-700 dark:text-white"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="buscar-cpf">CPF</Label>
+                    <Label htmlFor="buscar-cpf" className="dark:text-gray-300">
+                      CPF
+                    </Label>
                     <Input
                       id="buscar-cpf"
                       type="text"
@@ -274,11 +284,12 @@ export default function NotificacoesPage() {
                       }
                       maxLength={14}
                       disabled={loading}
+                      className="dark:bg-gray-900 dark:border-gray-700 dark:text-white"
                     />
                   </div>
                 </div>
                 {error && (
-                  <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
                     <AlertCircle className="w-5 h-5" />
                     <span>{error}</span>
                   </div>
@@ -317,7 +328,7 @@ export default function NotificacoesPage() {
                   className={
                     filtro === "todas"
                       ? "bg-gradient-to-r from-sky-500 to-pink-500 hover:from-sky-600 hover:to-pink-600"
-                      : ""
+                      : "dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                   }
                 >
                   Todas ({notificacoes.length})
@@ -328,7 +339,7 @@ export default function NotificacoesPage() {
                   className={
                     filtro === "naoLidas"
                       ? "bg-gradient-to-r from-sky-500 to-pink-500 hover:from-sky-600 hover:to-pink-600"
-                      : ""
+                      : "dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                   }
                 >
                   Não Lidas ({naoLidasCount})
@@ -339,7 +350,7 @@ export default function NotificacoesPage() {
                   variant="outline"
                   onClick={marcarTodasComoLidas}
                   disabled={marcandoTodas}
-                  className="text-sm"
+                  className="text-sm dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   {marcandoTodas ? (
                     <>
@@ -358,16 +369,16 @@ export default function NotificacoesPage() {
 
             {/* Lista */}
             {notificacoes.length === 0 ? (
-              <Card>
+              <Card className="dark:bg-gray-800 dark:border-gray-700">
                 <CardContent className="pt-6">
                   <div className="text-center py-12">
-                    <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-2">
+                    <Bell className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-300 mb-2">
                       {filtro === "naoLidas"
                         ? "Nenhuma notificação não lida"
                         : "Nenhuma notificação encontrada"}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       Você será notificado sobre suas compras, pagamentos e
                       eventos importantes
                     </p>
@@ -383,10 +394,10 @@ export default function NotificacoesPage() {
                   return (
                     <Card
                       key={notif.id}
-                      className={`transition-all ${
+                      className={`transition-all dark:bg-gray-800 dark:border-gray-700 ${
                         notif.lida
-                          ? "opacity-60 bg-gray-50"
-                          : "border-2 shadow-md"
+                          ? "opacity-60 bg-gray-50 dark:bg-gray-800/50"
+                          : "border-2 shadow-md dark:border-gray-700"
                       }`}
                     >
                       <CardContent className="pt-6">
@@ -400,24 +411,28 @@ export default function NotificacoesPage() {
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <h3
                                 className={`font-semibold ${
-                                  notif.lida ? "text-gray-600" : "text-gray-900"
+                                  notif.lida
+                                    ? "text-gray-600 dark:text-gray-400"
+                                    : "text-gray-900 dark:text-white"
                                 }`}
                               >
                                 {notif.titulo}
                               </h3>
                               {!notif.lida && (
-                                <span className="flex-shrink-0 w-2 h-2 bg-purple-500 rounded-full mt-2"></span>
+                                <span className="flex-shrink-0 w-2 h-2 bg-purple-500 dark:bg-purple-400 rounded-full mt-2"></span>
                               )}
                             </div>
                             <p
                               className={`text-sm mb-3 ${
-                                notif.lida ? "text-gray-500" : "text-gray-700"
+                                notif.lida
+                                  ? "text-gray-500 dark:text-gray-500"
+                                  : "text-gray-700 dark:text-gray-300"
                               }`}
                             >
                               {notif.mensagem}
                             </p>
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                                 <Calendar className="w-3 h-3" />
                                 {formatarData(notif.createdAt)}
                               </div>
@@ -427,7 +442,7 @@ export default function NotificacoesPage() {
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="h-7 text-xs"
+                                      className="h-7 text-xs dark:text-gray-300 dark:hover:bg-gray-700"
                                     >
                                       Ver
                                       <ExternalLink className="w-3 h-3 ml-1" />
@@ -440,7 +455,7 @@ export default function NotificacoesPage() {
                                     size="sm"
                                     onClick={() => marcarComoLida(notif.id)}
                                     disabled={marcandoComoLida === notif.id}
-                                    className="h-7 text-xs"
+                                    className="h-7 text-xs dark:text-gray-300 dark:hover:bg-gray-700"
                                   >
                                     {marcandoComoLida === notif.id ? (
                                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -471,6 +486,7 @@ export default function NotificacoesPage() {
                   setError(null);
                   setFiltro("todas");
                 }}
+                className="dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Buscar Outro Perfil
               </Button>
@@ -482,4 +498,3 @@ export default function NotificacoesPage() {
     </main>
   );
 }
-

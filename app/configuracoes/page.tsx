@@ -120,13 +120,15 @@ export default function ConfiguracoesPage() {
 
         <div className="space-y-6">
           {/* Notificações */}
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 dark:text-white">
+                <Bell className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 {t("notifications.title")}
               </CardTitle>
-              <CardDescription>{t("notifications.subtitle")}</CardDescription>
+              <CardDescription className="dark:text-gray-300">
+                {t("notifications.subtitle")}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
@@ -134,7 +136,7 @@ export default function ConfiguracoesPage() {
                   <div className="flex-1">
                     <Label
                       htmlFor="notif-email"
-                      className="text-base font-medium"
+                      className="text-base font-medium dark:text-gray-300"
                     >
                       {t("notifications.email")}
                     </Label>
@@ -156,7 +158,7 @@ export default function ConfiguracoesPage() {
                 <div className="border-t dark:border-gray-700 pt-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <Label className="text-base font-medium">
+                      <Label className="text-base font-medium dark:text-gray-300">
                         {t("notifications.purchase")}
                       </Label>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -179,7 +181,7 @@ export default function ConfiguracoesPage() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <Label className="text-base font-medium">
+                      <Label className="text-base font-medium dark:text-gray-300">
                         {t("notifications.payment")}
                       </Label>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -202,7 +204,7 @@ export default function ConfiguracoesPage() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <Label className="text-base font-medium">
+                      <Label className="text-base font-medium dark:text-gray-300">
                         {t("notifications.reminder")}
                       </Label>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -225,7 +227,7 @@ export default function ConfiguracoesPage() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <Label className="text-base font-medium">
+                      <Label className="text-base font-medium dark:text-gray-300">
                         {t("notifications.promotions")}
                       </Label>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -251,58 +253,78 @@ export default function ConfiguracoesPage() {
           </Card>
 
           {/* Preferências */}
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 dark:text-white">
+                <Settings className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 {t("preferences.title")}
               </CardTitle>
-              <CardDescription>{t("preferences.subtitle")}</CardDescription>
+              <CardDescription className="dark:text-gray-300">
+                {t("preferences.subtitle")}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
                 <Label
                   htmlFor="tema"
-                  className="text-base font-medium mb-2 block"
+                  className="text-base font-medium mb-2 block dark:text-gray-300"
                 >
                   {t("settings.theme")}
                 </Label>
                 <div className="grid grid-cols-3 gap-4">
                   <button
                     onClick={() => setTheme("light")}
-                    className={`p-4 border-2 rounded-lg transition-all ${
+                    className={`group p-4 border-2 rounded-lg transition-all hover:scale-105 ${
                       theme === "light"
-                        ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
-                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                        ? "border-purple-500 dark:border-purple-400 bg-purple-50 dark:bg-purple-900/20 shadow-md"
+                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-900"
                     }`}
                   >
-                    <Sun className="w-6 h-6 mx-auto mb-2 text-yellow-500" />
+                    <Sun
+                      className={`w-6 h-6 mx-auto mb-2 transition-colors ${
+                        theme === "light"
+                          ? "text-yellow-500"
+                          : "text-yellow-400 dark:text-yellow-500"
+                      }`}
+                    />
                     <span className="text-sm font-medium dark:text-gray-300">
                       {t("settings.theme.light")}
                     </span>
                   </button>
                   <button
                     onClick={() => setTheme("dark")}
-                    className={`p-4 border-2 rounded-lg transition-all ${
+                    className={`group p-4 border-2 rounded-lg transition-all hover:scale-105 ${
                       theme === "dark"
-                        ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
-                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                        ? "border-purple-500 dark:border-purple-400 bg-purple-50 dark:bg-purple-900/20 shadow-md"
+                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-900"
                     }`}
                   >
-                    <Moon className="w-6 h-6 mx-auto mb-2 text-indigo-500" />
+                    <Moon
+                      className={`w-6 h-6 mx-auto mb-2 transition-colors ${
+                        theme === "dark"
+                          ? "text-indigo-500"
+                          : "text-indigo-400 dark:text-indigo-500"
+                      }`}
+                    />
                     <span className="text-sm font-medium dark:text-gray-300">
                       {t("settings.theme.dark")}
                     </span>
                   </button>
                   <button
                     onClick={() => setTheme("system")}
-                    className={`p-4 border-2 rounded-lg transition-all ${
+                    className={`group p-4 border-2 rounded-lg transition-all hover:scale-105 ${
                       theme === "system"
-                        ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
-                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                        ? "border-purple-500 dark:border-purple-400 bg-purple-50 dark:bg-purple-900/20 shadow-md"
+                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-900"
                     }`}
                   >
-                    <Monitor className="w-6 h-6 mx-auto mb-2 text-gray-500" />
+                    <Monitor
+                      className={`w-6 h-6 mx-auto mb-2 transition-colors ${
+                        theme === "system"
+                          ? "text-gray-600 dark:text-gray-400"
+                          : "text-gray-400 dark:text-gray-500"
+                      }`}
+                    />
                     <span className="text-sm font-medium dark:text-gray-300">
                       {t("settings.theme.system")}
                     </span>
@@ -313,7 +335,7 @@ export default function ConfiguracoesPage() {
               <div>
                 <Label
                   htmlFor="idioma"
-                  className="text-base font-medium mb-2 block"
+                  className="text-base font-medium mb-2 block dark:text-gray-300"
                 >
                   {t("settings.language")}
                 </Label>
@@ -321,12 +343,16 @@ export default function ConfiguracoesPage() {
                   value={locale}
                   onValueChange={(value) => setLocale(value as Locale)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="dark:bg-gray-900 dark:border-gray-700 dark:text-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                     {locales.map((loc) => (
-                      <SelectItem key={loc} value={loc}>
+                      <SelectItem
+                        key={loc}
+                        value={loc}
+                        className="dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
                         {localeNames[loc]}
                       </SelectItem>
                     ))}
@@ -337,13 +363,15 @@ export default function ConfiguracoesPage() {
           </Card>
 
           {/* Privacidade e Segurança */}
-          <Card>
+          <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 dark:text-white">
+                <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 {t("privacy.title")}
               </CardTitle>
-              <CardDescription>{t("privacy.subtitle")}</CardDescription>
+              <CardDescription className="dark:text-gray-300">
+                {t("privacy.subtitle")}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -351,14 +379,31 @@ export default function ConfiguracoesPage() {
                   {t("privacy.dataSafe")}
                 </p>
               </div>
-              <div className="space-y-2">
-                <Button variant="outline" className="w-full justify-start">
-                  <Shield className="w-4 h-4 mr-2" />
-                  {t("privacy.changePassword")}
-                </Button>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {t("privacy.authComingSoon")}
-                </p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <span className="text-sm font-medium dark:text-gray-300">
+                      Dados Protegidos
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Seus dados pessoais são armazenados de forma segura e
+                    criptografada.
+                  </p>
+                </div>
+                <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm font-medium dark:text-gray-300">
+                      Privacidade
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Respeitamos sua privacidade e não compartilhamos seus dados
+                    com terceiros.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -402,11 +447,11 @@ export default function ConfiguracoesPage() {
           {/* Links rápidos */}
           <div className="grid md:grid-cols-3 gap-4 pt-6 border-t dark:border-gray-700">
             <Link href="/perfil">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all cursor-pointer group dark:bg-gray-800 dark:border-gray-700 hover:scale-105">
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg mb-3">
-                      <Mail className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg mb-3 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors">
+                      <Mail className="w-6 h-6 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform" />
                     </div>
                     <h3 className="font-semibold mb-1 dark:text-gray-300">
                       {t("links.profile.title")}
@@ -419,11 +464,11 @@ export default function ConfiguracoesPage() {
               </Card>
             </Link>
             <Link href="/ingressos">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all cursor-pointer group dark:bg-gray-800 dark:border-gray-700 hover:scale-105">
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-sky-100 dark:bg-sky-900/30 rounded-lg mb-3">
-                      <CreditCard className="w-6 h-6 text-sky-600 dark:text-sky-400" />
+                    <div className="p-3 bg-sky-100 dark:bg-sky-900/30 rounded-lg mb-3 group-hover:bg-sky-200 dark:group-hover:bg-sky-900/50 transition-colors">
+                      <CreditCard className="w-6 h-6 text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform" />
                     </div>
                     <h3 className="font-semibold mb-1 dark:text-gray-300">
                       {t("links.tickets.title")}
@@ -436,11 +481,11 @@ export default function ConfiguracoesPage() {
               </Card>
             </Link>
             <Link href="/eventos">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card className="hover:shadow-lg dark:hover:shadow-xl transition-all cursor-pointer group dark:bg-gray-800 dark:border-gray-700 hover:scale-105">
                 <CardContent className="pt-6">
                   <div className="flex flex-col items-center text-center">
-                    <div className="p-3 bg-pink-100 dark:bg-pink-900/30 rounded-lg mb-3">
-                      <Smartphone className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+                    <div className="p-3 bg-pink-100 dark:bg-pink-900/30 rounded-lg mb-3 group-hover:bg-pink-200 dark:group-hover:bg-pink-900/50 transition-colors">
+                      <Smartphone className="w-6 h-6 text-pink-600 dark:text-pink-400 group-hover:scale-110 transition-transform" />
                     </div>
                     <h3 className="font-semibold mb-1 dark:text-gray-300">
                       {t("links.events.title")}

@@ -17,11 +17,28 @@ export const translations: Record<Locale, Record<string, string>> = {
     "nav.home": "Início",
     "nav.events": "Eventos",
     "nav.tickets": "Meus Ingressos",
-    "nav.profile": "Perfil",
+    "nav.profile": "Meu Perfil",
     "nav.settings": "Configurações",
     "nav.notifications": "Notificações",
     "nav.admin": "Admin",
     "nav.logout": "Sair",
+    "nav.search.placeholder": "Buscar eventos...",
+    "nav.user": "Usuário",
+    "nav.switchAccount": "Trocar de Conta",
+    "nav.help": "Ajuda",
+
+    // Footer
+    "footer.description":
+      "Comissão de eventos especializada em trazer experiências exclusivas do {brand} para Manaus. Eventos cuidadosamente curados para criar momentos mágicos e inesquecíveis.",
+    "footer.quickLinks": "Links Rápidos",
+    "footer.about": "Sobre Nós",
+    "footer.admin": "Área Admin",
+    "footer.contact": "Contato",
+    "footer.location": "Manaus, AM",
+    "footer.email": "contato@bluehour.com.br",
+    "footer.exclusive": "Eventos Exclusivos",
+    "footer.copyright":
+      "© {year} Blue Hour - Comissão de Eventos. Todos os direitos reservados.",
 
     // Configurações
     "settings.title": "Configurações",
@@ -324,11 +341,28 @@ export const translations: Record<Locale, Record<string, string>> = {
     "nav.home": "Home",
     "nav.events": "Events",
     "nav.tickets": "My Tickets",
-    "nav.profile": "Profile",
+    "nav.profile": "My Profile",
     "nav.settings": "Settings",
     "nav.notifications": "Notifications",
     "nav.admin": "Admin",
     "nav.logout": "Logout",
+    "nav.search.placeholder": "Search events...",
+    "nav.user": "User",
+    "nav.switchAccount": "Switch Account",
+    "nav.help": "Help",
+
+    // Footer
+    "footer.description":
+      "Event commission specialized in bringing exclusive {brand} experiences to Manaus. Carefully curated events to create magical and unforgettable moments.",
+    "footer.quickLinks": "Quick Links",
+    "footer.about": "About Us",
+    "footer.admin": "Admin Area",
+    "footer.contact": "Contact",
+    "footer.location": "Manaus, AM",
+    "footer.email": "contato@bluehour.com.br",
+    "footer.exclusive": "Exclusive Events",
+    "footer.copyright":
+      "© {year} Blue Hour - Event Commission. All rights reserved.",
 
     // Settings
     "settings.title": "Settings",
@@ -624,11 +658,28 @@ export const translations: Record<Locale, Record<string, string>> = {
     "nav.home": "Inicio",
     "nav.events": "Eventos",
     "nav.tickets": "Mis Entradas",
-    "nav.profile": "Perfil",
+    "nav.profile": "Mi Perfil",
     "nav.settings": "Configuración",
     "nav.notifications": "Notificaciones",
     "nav.admin": "Admin",
     "nav.logout": "Salir",
+    "nav.search.placeholder": "Buscar eventos...",
+    "nav.user": "Usuario",
+    "nav.switchAccount": "Cambiar de Cuenta",
+    "nav.help": "Ayuda",
+
+    // Footer
+    "footer.description":
+      "Comisión de eventos especializada en traer experiencias exclusivas de {brand} a Manaus. Eventos cuidadosamente curados para crear momentos mágicos e inolvidables.",
+    "footer.quickLinks": "Enlaces Rápidos",
+    "footer.about": "Sobre Nosotros",
+    "footer.admin": "Área Admin",
+    "footer.contact": "Contacto",
+    "footer.location": "Manaus, AM",
+    "footer.email": "contato@bluehour.com.br",
+    "footer.exclusive": "Eventos Exclusivos",
+    "footer.copyright":
+      "© {year} Blue Hour - Comisión de Eventos. Todos los derechos reservados.",
 
     // Configuración
     "settings.title": "Configuración",
