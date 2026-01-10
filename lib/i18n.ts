@@ -35,7 +35,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "footer.admin": "Área Admin",
     "footer.contact": "Contato",
     "footer.location": "Manaus, AM",
-    "footer.email": "contato@bluehour.com.br",
+    "footer.email": "bluehour.events5@gmail.com",
     "footer.exclusive": "Eventos Exclusivos",
     "footer.copyright":
       "© {year} Blue Hour - Comissão de Eventos. Todos os direitos reservados.",
@@ -359,7 +359,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "footer.admin": "Admin Area",
     "footer.contact": "Contact",
     "footer.location": "Manaus, AM",
-    "footer.email": "contato@bluehour.com.br",
+    "footer.email": "bluehour.events5@gmail.com",
     "footer.exclusive": "Exclusive Events",
     "footer.copyright":
       "© {year} Blue Hour - Event Commission. All rights reserved.",
@@ -676,7 +676,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "footer.admin": "Área Admin",
     "footer.contact": "Contacto",
     "footer.location": "Manaus, AM",
-    "footer.email": "contato@bluehour.com.br",
+    "footer.email": "bluehour.events5@gmail.com",
     "footer.exclusive": "Eventos Exclusivos",
     "footer.copyright":
       "© {year} Blue Hour - Comisión de Eventos. Todos los derechos reservados.",

@@ -73,7 +73,9 @@ export async function criarNotificacaoPagamento(
   return criarNotificacao({
     clienteId,
     titulo: "Pagamento Confirmado!",
-    mensagem: `Seu pagamento via ${formasPagamento[formaPagamento] || formaPagamento} foi confirmado.`,
+    mensagem: `Seu pagamento via ${
+      formasPagamento[formaPagamento] || formaPagamento
+    } foi confirmado.`,
     tipo: "success",
     link: `/compra/confirmacao?codigo=${codigoVenda}`,
   });
@@ -117,7 +119,9 @@ export async function criarNotificacaoPagamentoPendente(
     boleto: "Boleto Bancário",
   };
 
-  let mensagem = `Seu pagamento via ${formasPagamento[formaPagamento] || formaPagamento} está pendente.`;
+  let mensagem = `Seu pagamento via ${
+    formasPagamento[formaPagamento] || formaPagamento
+  } está pendente.`;
   if (vencimento) {
     mensagem += ` Vence em ${vencimento.toLocaleDateString("pt-BR")}.`;
   }
@@ -141,9 +145,65 @@ export async function criarNotificacaoPagamentoExpirado(
   return criarNotificacao({
     clienteId,
     titulo: "Pagamento Expirado",
-    mensagem: "O prazo para pagamento expirou. Realize uma nova compra se ainda desejar participar do evento.",
+    mensagem:
+      "O prazo para pagamento expirou. Realize uma nova compra se ainda desejar participar do evento.",
     tipo: "error",
     link: `/eventos`,
   });
 }
 
+/**
+ * Cria uma notificação administrativa (para todos os admins)
+ */
+export async function criarNotificacaoAdmin({
+  titulo,
+  mensagem,
+  tipo = "info",
+  link,
+}: {
+  titulo: string;
+  mensagem: string;
+  tipo?: "info" | "success" | "warning" | "error";
+  link?: string;
+}) {
+  try {
+    const notificacao = await prisma.notificacaoAdmin.create({
+      data: {
+        titulo,
+        mensagem,
+        tipo,
+        link,
+      },
+    });
+
+    return notificacao;
+  } catch (error) {
+    console.error("Erro ao criar notificação administrativa:", error);
+    throw error;
+  }
+}
+
+/**
+ * Cria notificação administrativa de nova compra
+ */
+export async function criarNotificacaoAdminCompra(
+  nomeCliente: string,
+  tipoIngresso: string,
+  nomeEvento: string,
+  quantidade: number,
+  valorTotal: number,
+  codigoVenda: string,
+  kit?: string | null
+) {
+  const mensagemKit = kit ? ` (Kit: ${kit})` : "";
+  const mensagem = `${nomeCliente} fez uma compra de ${quantidade} ingresso(s) ${tipoIngresso}${mensagemKit} do evento "${nomeEvento}" no valor de R$ ${valorTotal.toFixed(
+    2
+  )}. Código: ${codigoVenda}`;
+
+  return criarNotificacaoAdmin({
+    titulo: "Nova Compra Realizada",
+    mensagem,
+    tipo: "success",
+    link: `/admin/vendas?codigo=${codigoVenda}`,
+  });
+}

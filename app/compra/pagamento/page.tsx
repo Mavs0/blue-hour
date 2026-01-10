@@ -19,7 +19,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { InstrucoesPix } from "@/components/instrucoes-pix";
-import { InstrucoesBoleto } from "@/components/instrucoes-boleto";
 
 async function PagamentoContent({ codigo }: { codigo: string }) {
   const venda = await prisma.venda.findUnique({
@@ -158,9 +157,6 @@ async function PagamentoContent({ codigo }: { codigo: string }) {
                 {vendaCompleta.formaPagamento === "pix" && (
                   <Smartphone className="h-5 w-5" />
                 )}
-                {vendaCompleta.formaPagamento === "boleto" && (
-                  <Receipt className="h-5 w-5" />
-                )}
                 {(vendaCompleta.formaPagamento === "cartao_credito" ||
                   vendaCompleta.formaPagamento === "cartao_debito") && (
                   <CreditCard className="h-5 w-5" />
@@ -172,20 +168,18 @@ async function PagamentoContent({ codigo }: { codigo: string }) {
               {vendaCompleta.formaPagamento === "pix" &&
                 vendaCompleta.qrCodePix && (
                   <InstrucoesPix
-                    codigoPix={vendaCompleta.qrCodePix}
+                    codigoPix={
+                      vendaCompleta.qrCodePix.includes("|")
+                        ? vendaCompleta.qrCodePix.split("|")[0]
+                        : vendaCompleta.qrCodePix
+                    }
                     valor={venda.valorTotal}
                     codigoVenda={venda.codigo}
-                  />
-                )}
-
-              {vendaCompleta.formaPagamento === "boleto" &&
-                vendaCompleta.codigoPagamento &&
-                vendaCompleta.vencimentoBoleto && (
-                  <InstrucoesBoleto
-                    codigoBarras={vendaCompleta.codigoPagamento}
-                    valor={venda.valorTotal}
-                    vencimento={vendaCompleta.vencimentoBoleto}
-                    codigoVenda={venda.codigo}
+                    qrCodeBase64={
+                      vendaCompleta.qrCodePix.includes("|")
+                        ? vendaCompleta.qrCodePix.split("|")[1]
+                        : undefined
+                    }
                   />
                 )}
 

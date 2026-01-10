@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ingressoSchema } from "@/lib/validations";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -25,13 +27,36 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ ingressos });
-  } catch (error) {
+    return NextResponse.json({ ingressos }, { status: 200 });
+  } catch (error: any) {
     console.error("Erro ao buscar ingressos:", error);
-    return NextResponse.json(
-      { error: "Erro ao buscar ingressos" },
-      { status: 500 }
+    console.error("Detalhes do erro:", {
+      name: error?.name,
+      code: error?.code,
+      message: error?.message,
+    });
+
+    // Erro de conexão com banco - retornar array vazio para não quebrar o frontend
+    if (
+      error?.code === "P1001" ||
+      error?.code === "P1000" ||
+      error?.message?.includes("connect") ||
+      error?.message?.includes("connection") ||
+      error?.message?.includes("timeout")
+    ) {
+      console.warn(
+        "Erro de conexão ao buscar ingressos, retornando array vazio:",
+        error?.message
+      );
+      return NextResponse.json({ ingressos: [] }, { status: 200 });
+    }
+
+    // Para outros erros inesperados, ainda retornar 200 com array vazio para não quebrar o frontend
+    console.warn(
+      "Erro ao buscar ingressos, retornando array vazio:",
+      error?.message
     );
+    return NextResponse.json({ ingressos: [] }, { status: 200 });
   }
 }
 

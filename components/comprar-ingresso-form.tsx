@@ -74,7 +74,7 @@ export function ComprarIngressoForm({
   const handleFormaPagamentoChange = (value: string) => {
     setValue(
       "formaPagamento",
-      value as "pix" | "cartao_credito" | "cartao_debito" | "boleto",
+      value as "pix" | "cartao_credito" | "cartao_debito",
       {
         shouldValidate: true,
       }
@@ -85,21 +85,65 @@ export function ComprarIngressoForm({
   };
 
   const onSubmit = async (data: CompraIngressoInput) => {
+    console.log("onSubmit chamado", { data, dadosCartao });
     setIsSubmitting(true);
     setError(null);
 
-    // Validar dados do cartão se necessário
-    if (
-      (data.formaPagamento === "cartao_credito" ||
-        data.formaPagamento === "cartao_debito") &&
-      !dadosCartao
-    ) {
-      setError("Preencha os dados do cartão");
-      setIsSubmitting(false);
-      return;
-    }
+    // Verificar se há erros de validação do react-hook-form
+    console.log("Erros de validação:", errors);
 
     try {
+      // Validar dados do cartão se necessário
+      if (
+        data.formaPagamento === "cartao_credito" ||
+        data.formaPagamento === "cartao_debito"
+      ) {
+        if (!dadosCartao) {
+          console.error("Dados do cartão não encontrados");
+          setError("Preencha os dados do cartão");
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Validar se todos os campos obrigatórios estão preenchidos
+        if (
+          !dadosCartao.numero ||
+          !dadosCartao.nome ||
+          !dadosCartao.validade ||
+          !dadosCartao.cvv
+        ) {
+          console.error("Campos do cartão incompletos:", dadosCartao);
+          setError("Preencha todos os dados do cartão");
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Validar formato básico
+        const numeroLimpo = dadosCartao.numero.replace(/\D/g, "");
+        if (numeroLimpo.length < 13 || numeroLimpo.length > 19) {
+          console.error("Número do cartão inválido:", numeroLimpo.length);
+          setError("Número do cartão inválido");
+          setIsSubmitting(false);
+          return;
+        }
+
+        const cvvLimpo = dadosCartao.cvv.replace(/\D/g, "");
+        if (cvvLimpo.length < 3 || cvvLimpo.length > 4) {
+          console.error("CVV inválido:", cvvLimpo.length);
+          setError("CVV inválido");
+          setIsSubmitting(false);
+          return;
+        }
+
+        const validadeLimpa = dadosCartao.validade.replace(/\D/g, "");
+        if (validadeLimpa.length !== 4) {
+          console.error("Validade inválida:", validadeLimpa);
+          setError("Validade inválida. Use o formato MM/AA");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const payload: any = {
         eventoId,
         ingressoId,
@@ -111,14 +155,32 @@ export function ComprarIngressoForm({
         data.formaPagamento === "cartao_credito" ||
         data.formaPagamento === "cartao_debito"
       ) {
-        payload.numeroCartao = dadosCartao?.numero;
-        payload.nomeCartao = dadosCartao?.nome;
-        payload.validadeCartao = dadosCartao?.validade;
-        payload.cvvCartao = dadosCartao?.cvv;
-        if (data.formaPagamento === "cartao_credito" && dadosCartao?.parcelas) {
+        if (!dadosCartao) {
+          throw new Error("Dados do cartão não encontrados");
+        }
+        payload.numeroCartao = dadosCartao.numero;
+        payload.nomeCartao = dadosCartao.nome;
+        payload.validadeCartao = dadosCartao.validade;
+        payload.cvvCartao = dadosCartao.cvv;
+        if (data.formaPagamento === "cartao_credito" && dadosCartao.parcelas) {
           payload.parcelas = dadosCartao.parcelas;
         }
+
+        // Debug: verificar dados antes de enviar
+        console.log("Dados do cartão sendo enviados:", {
+          numero: payload.numeroCartao?.substring(0, 4) + "****",
+          nome: payload.nomeCartao,
+          validade: payload.validadeCartao,
+          cvv: "***",
+          formaPagamento: data.formaPagamento,
+        });
       }
+
+      console.log("Enviando requisição para /api/comprar", {
+        eventoId,
+        ingressoId,
+        formaPagamento: payload.formaPagamento,
+      });
 
       const response = await fetch("/api/comprar", {
         method: "POST",
@@ -128,19 +190,36 @@ export function ComprarIngressoForm({
         body: JSON.stringify(payload),
       });
 
+      console.log("Resposta recebida:", {
+        status: response.status,
+        ok: response.ok,
+      });
+
       const result = await response.json();
+      console.log("Resultado parseado:", result);
 
       if (!response.ok) {
-        throw new Error(result.error || "Erro ao processar compra");
+        const errorMessage =
+          result.error || result.details || "Erro ao processar compra";
+        console.error("Erro na resposta:", {
+          status: response.status,
+          error: result.error,
+          details: result.details,
+          result,
+        });
+        throw new Error(errorMessage);
       }
 
+      console.log("Compra realizada com sucesso, redirecionando...");
+
       // Redirecionar baseado no status do pagamento
-      if (result.venda.statusPagamento === "confirmado") {
+      if (result.venda?.statusPagamento === "confirmado") {
         router.push(`/compra/confirmacao?codigo=${result.venda.codigo}`);
       } else {
         router.push(`/compra/pagamento?codigo=${result.venda.codigo}`);
       }
     } catch (err: any) {
+      console.error("Erro ao processar compra:", err);
       setError(err.message || "Erro ao processar compra. Tente novamente.");
       setIsSubmitting(false);
     }
@@ -155,7 +234,50 @@ export function ComprarIngressoForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit, (validationErrors) => {
+            console.error(
+              "Erros de validação do formulário:",
+              validationErrors
+            );
+            // Filtrar erros de campos do cartão que não estão no formulário principal
+            const errosFiltrados = Object.keys(validationErrors).filter(
+              (key) =>
+                ![
+                  "numeroCartao",
+                  "nomeCartao",
+                  "validadeCartao",
+                  "cvvCartao",
+                ].includes(key)
+            );
+
+            if (errosFiltrados.length > 0) {
+              const primeiroErro =
+                validationErrors[
+                  errosFiltrados[0] as keyof typeof validationErrors
+                ];
+              setError(
+                primeiroErro?.message?.toString() ||
+                  "Por favor, preencha todos os campos corretamente."
+              );
+            } else {
+              // Se só tem erros de cartão, validar manualmente
+              if (
+                (formaPagamento === "cartao_credito" ||
+                  formaPagamento === "cartao_debito") &&
+                (!dadosCartao ||
+                  !dadosCartao.numero ||
+                  !dadosCartao.nome ||
+                  !dadosCartao.validade ||
+                  !dadosCartao.cvv)
+              ) {
+                setError("Preencha todos os dados do cartão");
+              }
+            }
+            setIsSubmitting(false);
+          })}
+          className="space-y-4"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome Completo *</Label>
@@ -269,12 +391,6 @@ export function ComprarIngressoForm({
                       <span>Cartão de Débito</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="boleto">
-                    <div className="flex items-center gap-2">
-                      <Receipt className="h-4 w-4" />
-                      <span>Boleto Bancário</span>
-                    </div>
-                  </SelectItem>
                 </SelectContent>
               </Select>
               {errors.formaPagamento && (
@@ -320,6 +436,14 @@ export function ComprarIngressoForm({
               type="submit"
               className="w-full"
               disabled={isSubmitting || disponivel <= 0}
+              onClick={(e) => {
+                console.log("Botão clicado", {
+                  isSubmitting,
+                  disponivel,
+                  disabled: isSubmitting || disponivel <= 0,
+                });
+                // Não prevenir default aqui, deixar o form.handleSubmit fazer o trabalho
+              }}
             >
               {isSubmitting ? "Processando..." : "Finalizar Compra"}
             </Button>

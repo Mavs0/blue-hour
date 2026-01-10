@@ -38,6 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AdminLoading } from "@/components/admin/admin-loading";
 
 type Venda = {
   id: string;
@@ -198,8 +199,10 @@ export default function AdminVendasPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Gerenciar Vendas</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Gerenciar Vendas
+        </h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           Visualize e gerencie todas as vendas realizadas
         </p>
       </div>
@@ -209,13 +212,13 @@ export default function AdminVendasPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 Total de Vendas
               </CardTitle>
               <Ticket className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {stats.totalVendas}
               </div>
             </CardContent>
@@ -223,13 +226,13 @@ export default function AdminVendasPage() {
 
           <Card className="border-l-4 border-l-green-500">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 Vendas Confirmadas
               </CardTitle>
               <CheckCircle2 className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {stats.quantidadeConfirmada}
               </div>
             </CardContent>
@@ -237,13 +240,13 @@ export default function AdminVendasPage() {
 
           <Card className="border-l-4 border-l-purple-500">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 Receita Total
               </CardTitle>
               <DollarSign className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatarMoeda(stats.totalReceita)}
               </div>
             </CardContent>
@@ -251,13 +254,13 @@ export default function AdminVendasPage() {
 
           <Card className="border-l-4 border-l-pink-500">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 Receita Confirmada
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-pink-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formatarMoeda(stats.receitaConfirmada)}
               </div>
             </CardContent>
@@ -265,13 +268,13 @@ export default function AdminVendasPage() {
 
           <Card className="border-l-4 border-l-orange-500">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 Ingressos Vendidos
               </CardTitle>
               <Users className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {stats.totalQuantidade}
               </div>
             </CardContent>
@@ -282,7 +285,7 @@ export default function AdminVendasPage() {
       {/* Filtros */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 dark:text-white">
             <Filter className="w-5 h-5" />
             Filtros
           </CardTitle>
@@ -404,17 +407,14 @@ export default function AdminVendasPage() {
       {/* Lista de Vendas */}
       <Card>
         <CardHeader>
-          <CardTitle>Vendas</CardTitle>
-          <CardDescription>
+          <CardTitle className="dark:text-white">Vendas</CardTitle>
+          <CardDescription className="dark:text-gray-400">
             {pagination.total} venda(s) encontrada(s)
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-              <p className="mt-4 text-gray-500">Carregando vendas...</p>
-            </div>
+            <AdminLoading message="Carregando vendas..." variant="inline" />
           ) : vendas.length === 0 ? (
             <div className="text-center py-12">
               <Ticket className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -495,10 +495,10 @@ export default function AdminVendasPage() {
 
                       <div className="flex flex-col items-end gap-2">
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-gray-900">
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white">
                             {formatarMoeda(venda.valorTotal)}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
                             {venda.quantidade} ingresso(s)
                           </div>
                         </div>

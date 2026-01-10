@@ -100,3 +100,17 @@ model Notificacao {
   @@index([lida])
 }
 
+model NotificacaoAdmin {
+  id          String   @id @default(cuid())
+  titulo      String
+  mensagem    String
+  tipo        String   @default("info") // info, success, warning, error
+  lida        Boolean  @default(false)
+  link        String?  // Link opcional para ação relacionada
+  createdAt   DateTime @default(now())
+  
+  @@map("notificacoes_admin")
+  @@index([lida])
+  @@index([createdAt])
+}
+

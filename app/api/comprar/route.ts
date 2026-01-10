@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { compraIngressoSchema } from "@/lib/validations";
-import {
-  gerarCodigoPix,
-  gerarCodigoBarras,
-  processarPagamentoCartao,
-} from "@/lib/pagamento";
+import { gerarCodigoPix, processarPagamentoCartao } from "@/lib/pagamento";
+import { gerarPixReal } from "@/lib/pix-api";
 import {
   criarNotificacaoCompra,
   criarNotificacaoPagamento,
   criarNotificacaoPagamentoPendente,
+  criarNotificacaoAdminCompra,
 } from "@/lib/notificacoes";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { sanitizeString } from "@/lib/sanitize";
@@ -95,20 +93,27 @@ export async function POST(request: NextRequest) {
     let statusPagamento = "pendente";
     let codigoPagamento: string | null = null;
     let qrCodePix: string | null = null;
-    let vencimentoBoleto: Date | null = null;
     let dadosCartaoSalvos: string | null = null;
 
     if (
       dadosValidados.formaPagamento === "cartao_credito" ||
       dadosValidados.formaPagamento === "cartao_debito"
     ) {
-      // Processar pagamento com cartão
+      // Validar se todos os dados do cartão foram fornecidos
       if (
-        dadosValidados.numeroCartao &&
-        dadosValidados.nomeCartao &&
-        dadosValidados.validadeCartao &&
-        dadosValidados.cvvCartao
+        !dadosValidados.numeroCartao ||
+        !dadosValidados.nomeCartao ||
+        !dadosValidados.validadeCartao ||
+        !dadosValidados.cvvCartao
       ) {
+        return NextResponse.json(
+          { error: "Dados do cartão incompletos. Preencha todos os campos." },
+          { status: 400 }
+        );
+      }
+
+      // Processar pagamento com cartão
+      try {
         const resultado = await processarPagamentoCartao(
           {
             numero: dadosValidados.numeroCartao,
@@ -126,29 +131,60 @@ export async function POST(request: NextRequest) {
           statusPagamento = "confirmado";
           codigoPagamento = resultado.transacaoId;
           // Salvar apenas últimos 4 dígitos e bandeira (não salvar dados completos)
+          const numeroLimpo = dadosValidados.numeroCartao.replace(/\D/g, "");
           dadosCartaoSalvos = JSON.stringify({
-            ultimosDigitos: dadosValidados.numeroCartao.slice(-4),
+            ultimosDigitos: numeroLimpo.slice(-4),
             bandeira: "Cartão",
+            tipo:
+              dadosValidados.formaPagamento === "cartao_credito"
+                ? "crédito"
+                : "débito",
           });
         } else {
           return NextResponse.json(
-            { error: resultado.erro || "Erro ao processar pagamento" },
+            {
+              error: resultado.erro || "Erro ao processar pagamento",
+              details: "Verifique os dados do cartão e tente novamente.",
+            },
             { status: 400 }
           );
         }
+      } catch (error: any) {
+        console.error("Erro ao processar pagamento com cartão:", error);
+        return NextResponse.json(
+          {
+            error: "Erro ao processar pagamento com cartão",
+            details:
+              error.message ||
+              "Tente novamente ou use outra forma de pagamento.",
+          },
+          { status: 500 }
+        );
       }
     } else if (dadosValidados.formaPagamento === "pix") {
-      // Gerar código PIX
-      codigoPagamento = gerarCodigoPix(valorTotal, codigo);
-      qrCodePix = codigoPagamento; // Em produção, gerar QR Code real
-      statusPagamento = "pendente";
-    } else if (dadosValidados.formaPagamento === "boleto") {
-      // Gerar boleto
-      const vencimento = new Date();
-      vencimento.setDate(vencimento.getDate() + 3); // 3 dias para vencer
-      codigoPagamento = gerarCodigoBarras(valorTotal, vencimento);
-      vencimentoBoleto = vencimento;
-      statusPagamento = "pendente";
+      // Gerar código PIX real usando API de pagamento
+      try {
+        const pixResponse = await gerarPixReal(
+          valorTotal,
+          codigo,
+          dadosValidados.nome,
+          dadosValidados.email,
+          dadosValidados.cpf
+        );
+        codigoPagamento = pixResponse.codigoPix;
+        // Armazenar QR Code base64 no campo qrCodePix junto com o código
+        // Formato: "codigoPix|base64" para facilitar separação depois
+        qrCodePix = pixResponse.qrCodeBase64
+          ? `${pixResponse.codigoPix}|${pixResponse.qrCodeBase64}`
+          : pixResponse.codigoPix;
+        statusPagamento = "pendente";
+      } catch (error) {
+        console.error("Erro ao gerar PIX:", error);
+        // Fallback para código PIX simulado se a API falhar
+        codigoPagamento = gerarCodigoPix(valorTotal, codigo);
+        qrCodePix = codigoPagamento;
+        statusPagamento = "pendente";
+      }
     }
 
     // Criar ou encontrar cliente (buscar por email ou CPF)
@@ -196,7 +232,6 @@ export async function POST(request: NextRequest) {
       statusPagamento,
       codigoPagamento: codigoPagamento || null,
       qrCodePix: qrCodePix || null,
-      vencimentoBoleto: vencimentoBoleto || null,
       dadosCartao: dadosCartaoSalvos || null,
     };
 
@@ -227,15 +262,25 @@ export async function POST(request: NextRequest) {
           dadosValidados.formaPagamento || "pix"
         );
       } else {
-        // Pagamento pendente (PIX ou Boleto) - criar notificação de compra e pagamento pendente
+        // Pagamento pendente (PIX) - criar notificação de compra e pagamento pendente
         await criarNotificacaoCompra(cliente.id, codigo, evento.nome);
         await criarNotificacaoPagamentoPendente(
           cliente.id,
           codigo,
-          dadosValidados.formaPagamento || "pix",
-          vencimentoBoleto || undefined
+          dadosValidados.formaPagamento || "pix"
         );
       }
+
+      // Criar notificação administrativa para todos os admins
+      await criarNotificacaoAdminCompra(
+        dadosValidados.nome,
+        ingresso.tipo,
+        evento.nome,
+        dadosValidados.quantidade,
+        valorTotal,
+        codigo,
+        ingresso.kit
+      );
     } catch (notificacaoError) {
       // Não falhar a compra se houver erro ao criar notificação
       console.error("Erro ao criar notificação:", notificacaoError);
@@ -254,7 +299,6 @@ export async function POST(request: NextRequest) {
         statusPagamento: statusPagamento,
         codigoPagamento: codigoPagamento,
         qrCodePix: qrCodePix,
-        vencimentoBoleto: vencimentoBoleto,
       },
     });
   } catch (error: any) {

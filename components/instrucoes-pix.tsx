@@ -9,12 +9,14 @@ interface InstrucoesPixProps {
   codigoPix: string;
   valor: number;
   codigoVenda: string;
+  qrCodeBase64?: string;
 }
 
 export function InstrucoesPix({
   codigoPix,
   valor,
   codigoVenda,
+  qrCodeBase64,
 }: InstrucoesPixProps) {
   const [copiado, setCopiado] = useState(false);
 
@@ -41,19 +43,29 @@ export function InstrucoesPix({
         </div>
       </div>
 
-      {/* QR Code Simulado */}
+      {/* QR Code */}
       <div className="flex justify-center">
-        <Card className="p-4 border-2 border-dashed border-gray-300">
+        <Card className="p-4 border-2 border-gray-300">
           <CardContent className="p-4">
-            <div className="w-64 h-64 bg-gray-100 rounded-lg flex items-center justify-center flex-col">
-              <QrCode className="h-32 w-32 text-gray-400" />
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                QR Code PIX
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                Escaneie com seu app bancário
-              </p>
-            </div>
+            {qrCodeBase64 ? (
+              <div className="w-64 h-64 flex items-center justify-center">
+                <img
+                  src={`data:image/png;base64,${qrCodeBase64}`}
+                  alt="QR Code PIX"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="w-64 h-64 bg-gray-100 rounded-lg flex items-center justify-center flex-col">
+                <QrCode className="h-32 w-32 text-gray-400" />
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  QR Code PIX
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Escaneie com seu app bancário
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

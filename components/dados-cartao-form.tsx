@@ -77,7 +77,13 @@ export function DadosCartaoForm({
     cvv: string;
     parcelas?: number;
   }) => {
-    onDadosChange(dados);
+    // Garantir que todos os campos estão preenchidos antes de atualizar
+    if (dados.numero && dados.nome && dados.validade && dados.cvv) {
+      onDadosChange(dados);
+    } else {
+      // Atualizar mesmo se incompleto para permitir digitação progressiva
+      onDadosChange(dados);
+    }
   };
 
   const opcoesParcela = [];

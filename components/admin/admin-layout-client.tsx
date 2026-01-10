@@ -1,44 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { AdminTopbar } from "@/components/admin/topbar";
 
 export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Fechar sidebar mobile ao redimensionar para desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Desktop Sidebar */}
-      <div className="hidden md:block">
-        <AdminSidebar />
-      </div>
+      <aside
+        className={`hidden md:flex transition-all duration-300 flex-shrink-0 ${
+          sidebarCollapsed ? "w-20" : "w-64"
+        }`}
+      >
+        <AdminSidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+      </aside>
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Mobile Sidebar */}
       <div
-        className={`
-          fixed inset-y-0 left-0 z-40 w-64 transform bg-white transition-transform duration-300 ease-in-out md:hidden
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
+        className={`fixed left-0 top-0 z-50 h-full transition-transform duration-300 md:hidden ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
-        <AdminSidebar />
+        <AdminSidebar onClose={() => setSidebarOpen(false)} />
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden md:ml-64">
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <AdminTopbar
           onMenuClick={() => setSidebarOpen(!sidebarOpen)}
           sidebarOpen={sidebarOpen}
         />
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4 md:p-6 lg:p-8">
           {children}
         </main>
       </div>

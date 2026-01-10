@@ -14,20 +14,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Plus, Trash2, X } from "lucide-react";
 
 interface CriarEventoFormProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
-  onCancel?: () => void;
 }
 
-export function CriarEventoForm({ onSuccess, onCancel }: CriarEventoFormProps) {
+export function CriarEventoForm({
+  open,
+  onOpenChange,
+  onSuccess,
+}: CriarEventoFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +41,7 @@ export function CriarEventoForm({ onSuccess, onCancel }: CriarEventoFormProps) {
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors },
   } = useForm<EventoInput>({
     resolver: zodResolver(eventoSchema),
@@ -74,12 +80,17 @@ export function CriarEventoForm({ onSuccess, onCancel }: CriarEventoFormProps) {
         throw new Error(result.error || "Erro ao criar evento");
       }
 
+      // Resetar formulário
+      reset();
+
       if (onSuccess) {
         onSuccess();
       } else {
         router.push("/admin/eventos");
         router.refresh();
       }
+
+      // Não fechar o dialog automaticamente - manter aberto
     } catch (err: any) {
       setError(err.message || "Erro ao criar evento. Tente novamente.");
       setIsSubmitting(false);
@@ -87,14 +98,14 @@ export function CriarEventoForm({ onSuccess, onCancel }: CriarEventoFormProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">Criar Novo Evento</CardTitle>
-        <CardDescription>
-          Preencha os dados do evento e configure os tipos de ingressos
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">Criar Novo Evento</DialogTitle>
+          <DialogDescription>
+            Preencha os dados do evento e configure os tipos de ingressos
+          </DialogDescription>
+        </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Informações Básicas */}
           <div className="space-y-4">
@@ -285,16 +296,17 @@ export function CriarEventoForm({ onSuccess, onCancel }: CriarEventoFormProps) {
           )}
 
           <div className="flex gap-4 pt-4">
-            {onCancel && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onCancel}
-                className="flex-1"
-              >
-                Cancelar
-              </Button>
-            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                reset();
+                onOpenChange(false);
+              }}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
             <Button
               type="submit"
               className="flex-1 bg-gradient-to-r from-sky-500 to-pink-500 hover:from-sky-600 hover:to-pink-600"
@@ -304,7 +316,7 @@ export function CriarEventoForm({ onSuccess, onCancel }: CriarEventoFormProps) {
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
