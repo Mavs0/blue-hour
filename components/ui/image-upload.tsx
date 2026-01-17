@@ -322,11 +322,48 @@ export function ImageUpload({
           disabled={uploading}
         />
       </div>
-      {value && !preview && (
+      {/* Campo para inserir URL manualmente */}
+      <div className="mt-4 space-y-2">
+        <Label className="text-sm">Ou insira uma URL de imagem</Label>
+        <div className="flex gap-2">
+          <Input
+            type="text"
+            placeholder="https://exemplo.com/imagem.jpg ou /uploads/eventos/imagem.jpg"
+            value={value && !value.startsWith("blob:") && !value.startsWith("data:") ? value : ""}
+            onChange={(e) => {
+              const url = e.target.value.trim();
+              if (url === "") {
+                onChange("");
+                setPreview(null);
+              } else {
+                onChange(url);
+                // Tentar mostrar preview se for uma URL válida
+                if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")) {
+                  setPreview(url);
+                }
+              }
+            }}
+            className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+          />
+          {value && value !== "" && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                onChange("");
+                setPreview(null);
+              }}
+              className="dark:border-gray-700 dark:text-gray-300"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          URL atual: {value}
+          Suporta URLs completas (http://, https://) ou caminhos relativos (/caminho/imagem.jpg)
         </p>
-      )}
+      </div>
     </div>
   );
 }

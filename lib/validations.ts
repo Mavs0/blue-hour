@@ -65,8 +65,37 @@ export const eventoSchema = z.object({
     .string()
     .optional()
     .refine(
-      (val) => !val || val === "" || z.string().url().safeParse(val).success,
-      { message: "URL inválida" }
+      (val) => {
+        if (!val || val === "") return true;
+        
+        // Aceitar URLs absolutas (http://, https://)
+        if (val.startsWith("http://") || val.startsWith("https://")) {
+          try {
+            new URL(val);
+            return true;
+          } catch {
+            return false;
+          }
+        }
+        
+        // Aceitar caminhos relativos que começam com /
+        if (val.startsWith("/")) {
+          return true;
+        }
+        
+        // Aceitar data URLs (base64)
+        if (val.startsWith("data:image/")) {
+          return true;
+        }
+        
+        // Aceitar blob URLs (para previews locais)
+        if (val.startsWith("blob:")) {
+          return true;
+        }
+        
+        return false;
+      },
+      { message: "URL inválida. Use uma URL válida (http://, https://) ou um caminho relativo (/caminho/para/imagem.jpg)" }
     ),
   ingressos: z
     .array(ingressoSchema)

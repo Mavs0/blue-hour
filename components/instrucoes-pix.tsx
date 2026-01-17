@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
-  Copy,
-  Check,
   Smartphone,
   QrCode,
   Clock,
   AlertCircle,
+  MessageCircle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -25,15 +23,15 @@ export function InstrucoesPix({
   codigoVenda,
   qrCodeBase64,
 }: InstrucoesPixProps) {
-  const [copiado, setCopiado] = useState(false);
   const [qrCodeErro, setQrCodeErro] = useState(false);
   const [qrCodePath, setQrCodePath] = useState("/uploads/eventos/qrcode-pix.png");
 
-  const copiarCodigo = () => {
-    navigator.clipboard.writeText(codigoPix);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000);
-  };
+  // Número do WhatsApp para envio de comprovante
+  const whatsappNumber = "+5592992440502"; // (92) 99244-05-02 sem formatação
+  const whatsappMessage = encodeURIComponent(
+    `Olá! Acabei de realizar o pagamento PIX para a compra ${codigoVenda} no valor de R$ ${valor.toFixed(2)}. Segue o comprovante:`
+  );
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   return (
     <div className="space-y-6">
@@ -106,30 +104,14 @@ export function InstrucoesPix({
           <QrCode className="w-4 h-4" />
           Código PIX (Copiar e Colar)
         </label>
-        <div className="flex gap-2">
-          <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg font-mono text-xs break-all text-gray-900 dark:text-gray-100">
+        <div className="p-4 bg-gray-50 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-lg">
+          <p className="font-mono text-sm break-all text-gray-900 dark:text-gray-100 select-all leading-relaxed">
             {codigoPix}
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={copiarCodigo}
-            className="flex-shrink-0 h-auto px-4 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-          >
-            {copiado ? (
-              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-            ) : (
-              <Copy className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
-        {copiado && (
-          <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-            <Check className="w-4 h-4" />
-            Código copiado com sucesso!
           </p>
-        )}
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Selecione o código acima e copie (Ctrl+C ou Cmd+C) para colar no app do seu banco
+        </p>
       </div>
 
       {/* Informações */}
@@ -155,6 +137,35 @@ export function InstrucoesPix({
           </div>
         </CardContent>
       </Card>
+
+      {/* Instrução para Enviar Comprovante */}
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+            <MessageCircle className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-green-900 dark:text-green-200 mb-2">
+              Envie seu comprovante
+            </p>
+            <p className="text-xs text-green-800 dark:text-green-300 leading-relaxed mb-3">
+              Após realizar o pagamento PIX, envie o comprovante para o contato abaixo:
+            </p>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Enviar comprovante via WhatsApp
+            </a>
+            <p className="text-xs text-green-700 dark:text-green-400 mt-2">
+              Contato: <strong>(92) 99244-0502</strong>
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Aviso Importante */}
       <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">

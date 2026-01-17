@@ -224,13 +224,7 @@ async function PagamentoContent({ codigo }: { codigo: string }) {
         {/* Contador Regressivo para Pagamento Pendente */}
         {pagamentoPendente && (
           <div className="mb-6">
-            <ContadorRegressivo
-              dataExpiracao={dataExpiracao}
-              onExpirar={() => {
-                // Quando expirar, pode redirecionar ou atualizar status
-                console.log("Pagamento expirado!");
-              }}
-            />
+            <ContadorRegressivo dataExpiracao={dataExpiracao} />
           </div>
         )}
 

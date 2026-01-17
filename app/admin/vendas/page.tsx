@@ -32,6 +32,7 @@ import {
   AlertCircle,
   Eye,
   Download,
+  Check,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -42,6 +43,8 @@ import {
 import { AdminLoading } from "@/components/admin/admin-loading";
 import { VendaDetalhesModal } from "@/components/admin/vendas/venda-detalhes-modal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/components/ui/toaster";
 
 type Venda = {
   id: string;
@@ -92,6 +95,9 @@ export default function AdminVendasPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [filterMode, setFilterMode] = useState<"AND" | "OR">("AND");
   const [activeTab, setActiveTab] = useState("basico");
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [vendaParaConfirmar, setVendaParaConfirmar] = useState<string | null>(null);
+  const { success, error } = useToast();
   const [filters, setFilters] = useState({
     status: "",
     statusPagamento: "",
@@ -216,6 +222,49 @@ export default function AdminVendasPage() {
       boleto: "Boleto",
     };
     return formas[forma] || forma;
+  };
+
+  const abrirDialogConfirmacao = (codigo: string) => {
+    setVendaParaConfirmar(codigo);
+    setConfirmDialogOpen(true);
+  };
+
+  const marcarComoPago = async () => {
+    if (!vendaParaConfirmar) return;
+
+    try {
+      const response = await fetch(`/api/vendas/${vendaParaConfirmar}/confirmar-pagamento`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "confirmado" }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        success(
+          "Pagamento confirmado!",
+          "O cliente receberá um email de confirmação."
+        );
+        setConfirmDialogOpen(false);
+        setVendaParaConfirmar(null);
+        // Recarregar a lista de vendas
+        fetchVendas();
+      } else {
+        error(
+          "Erro ao confirmar pagamento",
+          data.error || "Erro desconhecido"
+        );
+      }
+    } catch (err) {
+      console.error("Erro ao marcar como pago:", err);
+      error(
+        "Erro ao confirmar pagamento",
+        "Tente novamente."
+      );
+    }
   };
 
   const exportarRelatorio = () => {
@@ -785,17 +834,29 @@ export default function AdminVendasPage() {
                           </div>
                         </div>
 
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedVenda(venda);
-                            setModalOpen(true);
-                          }}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Ver Detalhes
-                        </Button>
+                        <div className="flex gap-2">
+                          {venda.statusPagamento === "pendente" && (
+                            <Button
+                              size="sm"
+                              onClick={() => abrirDialogConfirmacao(venda.codigo)}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              <Check className="w-4 h-4 mr-2" />
+                              Marcar como Pago
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedVenda(venda);
+                              setModalOpen(true);
+                            }}
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Ver Detalhes
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -842,6 +903,18 @@ export default function AdminVendasPage() {
         venda={selectedVenda}
         open={modalOpen}
         onOpenChange={setModalOpen}
+      />
+
+      {/* Dialog de Confirmação */}
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        title="Confirmar Pagamento"
+        description="Tem certeza que deseja marcar esta venda como paga? O cliente receberá automaticamente um email de confirmação com os detalhes da compra."
+        confirmText="Sim, Confirmar Pagamento"
+        cancelText="Cancelar"
+        onConfirm={marcarComoPago}
+        variant="success"
       />
     </div>
   );

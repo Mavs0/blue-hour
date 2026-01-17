@@ -47,7 +47,7 @@ export function ContadorRegressivo({
     const interval = setInterval(calcularTempoRestante, 1000);
 
     return () => clearInterval(interval);
-  }, [dataExpiracao, onExpirar]);
+  }, [dataExpiracao]);
 
   if (tempoRestante.expirado) {
     return (

@@ -1,20 +1,5 @@
-// Importação dinâmica do SendGrid para evitar erro se não estiver instalado
-let sgMail: any = null;
-
-try {
-  sgMail = require("@sendgrid/mail");
-  // Configurar SendGrid
-  if (process.env.SENDGRID_API_KEY) {
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  }
-} catch (error) {
-  console.warn(
-    "⚠️ @sendgrid/mail não instalado. Execute: npm install @sendgrid/mail"
-  );
-}
-
-const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "noreply@bluehour.com.br";
-const FROM_NAME = process.env.SENDGRID_FROM_NAME || "Blue Hour";
+// Usar o novo sistema de provedores multi-email
+import { sendEmail as sendEmailProvider, isEmailConfigured, getCurrentProvider } from "./email-providers";
 
 interface EmailOptions {
   to: string;
@@ -24,7 +9,8 @@ interface EmailOptions {
 }
 
 /**
- * Envia um email usando SendGrid
+ * Envia um email usando o provedor configurado
+ * Suporta: Mailjet, Brevo
  */
 export async function sendEmail({
   to,
@@ -32,81 +18,23 @@ export async function sendEmail({
   html,
   text,
 }: EmailOptions): Promise<void> {
-  // Verificar se SendGrid está instalado
-  if (!sgMail) {
-    console.error("❌ [ERRO] @sendgrid/mail não está instalado!");
-    console.error("   Execute: npm install @sendgrid/mail");
+  const provider = getCurrentProvider();
+  
+  if (!isEmailConfigured()) {
+    console.warn("⚠️ [AVISO] Nenhum provedor de email configurado!");
+    console.warn("   Configure uma das opções no .env.local:");
+    console.warn("   1. Mailjet: MAILJET_API_KEY=..., MAILJET_SECRET_KEY=...");
+    console.warn("   2. Brevo: BREVO_API_KEY=...");
+    console.warn("   Veja: CONFIGURAR_EMAIL.md");
     console.log("📧 [DEV MODE] Email não enviado - Simulando envio:");
     console.log("   To:", to);
     console.log("   Subject:", subject);
     return;
   }
 
-  // Verificar se API key está configurada
-  if (!process.env.SENDGRID_API_KEY) {
-    console.error("❌ [ERRO] SENDGRID_API_KEY não está configurada!");
-    console.error("   Configure no arquivo .env.local:");
-    console.error("   SENDGRID_API_KEY=sua_chave_aqui");
-    console.error("   SENDGRID_FROM_EMAIL=seu_email@dominio.com");
-    console.log("📧 [DEV MODE] Email não enviado - Simulando envio:");
-    console.log("   To:", to);
-    console.log("   Subject:", subject);
-    return;
-  }
-
-  // Verificar se email de origem está configurado
-  if (!process.env.SENDGRID_FROM_EMAIL) {
-    console.warn(
-      "⚠️ [AVISO] SENDGRID_FROM_EMAIL não configurado, usando padrão:",
-      FROM_EMAIL
-    );
-  }
-
-  try {
-    const result = await sgMail.send({
-      from: {
-        email: FROM_EMAIL,
-        name: FROM_NAME,
-      },
-      to,
-      subject,
-      html,
-      text: text || html.replace(/<[^>]*>/g, ""), // Texto simples removendo HTML
-    });
-
-    console.log(`✅ Email enviado com sucesso para ${to}`);
-    console.log(`   Status Code: ${result[0]?.statusCode || "N/A"}`);
-    return;
-  } catch (error: any) {
-    console.error("❌ Erro ao enviar email:", error.message || error);
-
-    if (error.response) {
-      console.error("   Status Code:", error.response.statusCode);
-      console.error("   Body:", JSON.stringify(error.response.body, null, 2));
-
-      // Mensagens de erro mais amigáveis
-      if (error.response.statusCode === 401) {
-        console.error("   ⚠️ API Key inválida ou não autorizada!");
-        console.error("   Verifique se a SENDGRID_API_KEY está correta.");
-      } else if (error.response.statusCode === 403) {
-        console.error("   ⚠️ Acesso negado!");
-        console.error("   Verifique as permissões da sua API Key no SendGrid.");
-      } else if (error.response.statusCode === 400) {
-        console.error("   ⚠️ Requisição inválida!");
-        console.error(
-          "   Verifique se o email de origem está verificado no SendGrid."
-        );
-      }
-    }
-
-    // Não lançar erro em desenvolvimento para não quebrar o fluxo
-    if (process.env.NODE_ENV === "development") {
-      console.warn("   ⚠️ Continuando em modo desenvolvimento...");
-      return;
-    }
-
-    throw error;
-  }
+  console.log(`📧 Enviando email usando: ${provider.toUpperCase()}`);
+  
+  return sendEmailProvider({ to, subject, html, text });
 }
 
 /**
@@ -158,6 +86,11 @@ function getEmailTemplate(content: string, title?: string): string {
                 <a href="${
                   process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
                 }" style="color: #667eea; text-decoration: none;">Visite nosso site</a>
+              </p>
+              <p style="margin: 10px 0 0 0; color: #9ca3af; font-size: 10px;">
+                <a href="${
+                  process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+                }/unsubscribe" style="color: #9ca3af; text-decoration: underline;">Descadastrar-se</a>
               </p>
             </td>
           </tr>
@@ -254,7 +187,7 @@ export async function enviarEmailConfirmacaoCompra(
 
   await sendEmail({
     to: email,
-    subject: `✅ Compra Confirmada - ${nomeEvento}`,
+    subject: `Compra Confirmada - ${nomeEvento}`,
     html: getEmailTemplate(content, "Compra Confirmada"),
   });
 }
@@ -334,7 +267,7 @@ export async function enviarEmailInstrucoesPix(
 
   await sendEmail({
     to: email,
-    subject: `💳 Instruções de Pagamento PIX - ${nomeEvento}`,
+    subject: `Instrucoes de Pagamento PIX - ${nomeEvento}`,
     html: getEmailTemplate(content, "Instruções de Pagamento"),
   });
 }
@@ -448,7 +381,7 @@ export async function enviarEmailConfirmacaoPagamento(
 
   await sendEmail({
     to: email,
-    subject: `🎉 Pagamento Confirmado - ${nomeEvento}`,
+    subject: `Pagamento Confirmado - ${nomeEvento}`,
     html: getEmailTemplate(content, "Pagamento Confirmado"),
   });
 }
@@ -541,7 +474,7 @@ export async function enviarEmailLembreteEvento(
 
   await sendEmail({
     to: email,
-    subject: `⏰ Lembrete: ${nomeEvento} é amanhã!`,
+    subject: `Lembrete: ${nomeEvento} é amanhã!`,
     html: getEmailTemplate(content, "Lembrete de Evento"),
   });
 }

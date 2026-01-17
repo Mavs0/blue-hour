@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -20,7 +20,7 @@ interface ConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   onConfirm: () => void;
-  variant?: "default" | "destructive";
+  variant?: "default" | "destructive" | "success";
 }
 
 export function ConfirmDialog({
@@ -43,6 +43,11 @@ export function ConfirmDialog({
                 <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
             )}
+            {variant === "success" && (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
+                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+            )}
             <div className="flex-1">
               <AlertDialogTitle>{title}</AlertDialogTitle>
               <AlertDialogDescription className="mt-2">
@@ -58,6 +63,8 @@ export function ConfirmDialog({
             className={
               variant === "destructive"
                 ? "bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                : variant === "success"
+                ? "bg-green-600 hover:bg-green-700 focus:ring-green-600"
                 : ""
             }
           >
