@@ -115,22 +115,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar conexão com banco antes de criar
-    try {
-      await prisma.$connect();
-    } catch (connectError: any) {
-      console.error("Erro ao conectar com banco:", connectError);
-      return NextResponse.json(
-        {
-          error: "Erro de conexão com banco de dados",
-          message: "Não foi possível conectar ao banco de dados",
-          details: process.env.NODE_ENV === "development" ? connectError?.message : undefined,
-        },
-        { status: 503 }
-      );
-    }
-
     // Criar evento com ingressos
+    // O Prisma gerencia a conexão automaticamente, não precisa verificar manualmente
     let evento;
     try {
       evento = await prisma.evento.create({
@@ -232,15 +218,20 @@ export async function POST(request: NextRequest) {
     if (
       error?.code === "P1001" ||
       error?.code === "P1000" ||
+      error?.code === "P1017" ||
       error?.message?.includes("connect") ||
       error?.message?.includes("connection") ||
       error?.message?.includes("timeout") ||
-      error?.message?.includes("Can't reach database")
+      error?.message?.includes("Can't reach database") ||
+      error?.message?.includes("Connection closed") ||
+      error?.message?.includes("Connection terminated")
     ) {
+      console.error("Erro de conexão detectado:", error?.code, error?.message);
       return NextResponse.json(
         {
           error: "Erro de conexão com o banco de dados",
-          message: "Verifique a configuração do DATABASE_URL",
+          message: "Não foi possível conectar ao banco de dados. Tente novamente em alguns instantes.",
+          code: error?.code,
         },
         { status: 503 }
       );
