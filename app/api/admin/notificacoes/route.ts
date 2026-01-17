@@ -36,10 +36,28 @@ export async function GET(request: NextRequest) {
       notificacoes,
       naoLidasCount,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao buscar notificações administrativas:", error);
+    
+    // Erro de conexão com banco
+    if (
+      error?.code === "P1001" ||
+      error?.code === "P1000" ||
+      error?.code === "P1017" ||
+      error?.message?.includes("Can't reach database") ||
+      error?.message?.includes("Connection")
+    ) {
+      return NextResponse.json(
+        { 
+          error: "Erro de conexão com o banco de dados",
+          message: "Não foi possível conectar ao banco. Verifique se o projeto Supabase está ativo.",
+        },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: "Erro ao buscar notificações" },
+      { error: "Erro ao buscar notificações", message: error?.message },
       { status: 500 }
     );
   }
@@ -70,10 +88,28 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao marcar notificação como lida:", error);
+    
+    // Erro de conexão com banco
+    if (
+      error?.code === "P1001" ||
+      error?.code === "P1000" ||
+      error?.code === "P1017" ||
+      error?.message?.includes("Can't reach database") ||
+      error?.message?.includes("Connection")
+    ) {
+      return NextResponse.json(
+        { 
+          error: "Erro de conexão com o banco de dados",
+          message: "Não foi possível conectar ao banco. Verifique se o projeto Supabase está ativo.",
+        },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: "Erro ao atualizar notificação" },
+      { error: "Erro ao atualizar notificação", message: error?.message },
       { status: 500 }
     );
   }

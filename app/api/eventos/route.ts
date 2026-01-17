@@ -52,6 +52,23 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  // Verificar se DATABASE_URL está configurada antes de processar
+  if (!process.env.DATABASE_URL) {
+    console.error("DATABASE_URL não está configurada");
+    return NextResponse.json(
+      {
+        error: "Configuração do banco de dados ausente",
+        message: "A variável DATABASE_URL não está configurada. Verifique o arquivo .env.local",
+        troubleshooting: {
+          step1: "Crie um arquivo .env.local na raiz do projeto",
+          step2: "Adicione: DATABASE_URL=\"sua_connection_string_aqui\"",
+          step3: "Reinicie o servidor de desenvolvimento",
+        },
+      },
+      { status: 503 }
+    );
+  }
+
   try {
     let body;
     try {
@@ -277,19 +294,50 @@ export async function POST(request: NextRequest) {
       error?.code === "P1001" ||
       error?.code === "P1000" ||
       error?.code === "P1017" ||
+      error?.code === "P1014" ||
       error?.message?.includes("connect") ||
       error?.message?.includes("connection") ||
       error?.message?.includes("timeout") ||
       error?.message?.includes("Can't reach database") ||
       error?.message?.includes("Connection closed") ||
-      error?.message?.includes("Connection terminated")
+      error?.message?.includes("Connection terminated") ||
+      error?.message?.includes("Environment variable not found") ||
+      error?.message?.includes("DATABASE_URL")
     ) {
       console.error("Erro de conexão detectado:", error?.code, error?.message);
+      console.error("Meta do erro:", error?.meta);
+      
+      // Verificar se DATABASE_URL está configurada
+      const hasDatabaseUrl = !!process.env.DATABASE_URL;
+      const databaseHost = error?.meta?.database_host || "desconhecido";
+      const databasePort = error?.meta?.database_port || "desconhecido";
+      
+      // Verificar se está usando porta 5432 (direta) em vez de 6543 (pooling)
+      const isUsingDirectPort = databasePort === 5432;
+      const databaseUrl = process.env.DATABASE_URL || "";
+      const isUsingPooler = databaseUrl.includes("pooler") || databaseUrl.includes(":6543");
+      
       return NextResponse.json(
         {
           error: "Erro de conexão com o banco de dados",
-          message: "Não foi possível conectar ao banco de dados. Tente novamente em alguns instantes.",
+          message: hasDatabaseUrl
+            ? `Não foi possível conectar ao banco de dados em ${databaseHost}:${databasePort}. O projeto Supabase pode estar pausado ou a connection string pode estar incorreta.`
+            : "DATABASE_URL não está configurada. Verifique o arquivo .env.local",
           code: error?.code,
+          databaseInfo: {
+            host: databaseHost,
+            port: databasePort,
+            usingDirectPort: isUsingDirectPort,
+            usingPooler: isUsingPooler,
+          },
+          troubleshooting: {
+            step1: "Verifique se o projeto Supabase está ativo (não pausado) em app.supabase.com",
+            step2: isUsingDirectPort && !isUsingPooler 
+              ? "Considere usar connection pooling (porta 6543) em vez da conexão direta (porta 5432)"
+              : "Verifique se a connection string está correta",
+            step3: "Teste a conexão com: npx prisma db push",
+            step4: "Se o projeto estiver pausado, reative-o no dashboard do Supabase",
+          },
         },
         { status: 503 }
       );
