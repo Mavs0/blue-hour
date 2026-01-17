@@ -79,12 +79,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Log do body recebido (sem dados sensíveis)
+    console.log("Body recebido:", {
+      hasNome: !!body.nome,
+      hasData: !!body.data,
+      hasLocal: !!body.local,
+      hasCidade: !!body.cidade,
+      ingressosCount: body.ingressos?.length || 0,
+      ingressos: body.ingressos?.map((i: any) => ({
+        tipo: i.tipo,
+        preco: typeof i.preco,
+        quantidade: typeof i.quantidade,
+      })),
+    });
+
     // Validar dados
     let dadosValidados;
     try {
       dadosValidados = eventoSchema.parse(body);
     } catch (validationError: any) {
       console.error("Erro de validação:", validationError);
+      console.error("Body que causou erro:", JSON.stringify(body, null, 2));
       return NextResponse.json(
         {
           error: "Dados inválidos",
@@ -115,28 +130,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validar e normalizar ingressos antes de criar
+    const ingressosParaCriar = dadosValidados.ingressos.map((ingresso) => {
+      // Garantir que preco e quantidade são números
+      const preco = typeof ingresso.preco === "string" 
+        ? parseFloat(ingresso.preco) 
+        : Number(ingresso.preco);
+      
+      const quantidade = typeof ingresso.quantidade === "string"
+        ? parseInt(ingresso.quantidade, 10)
+        : Number(ingresso.quantidade);
+
+      if (isNaN(preco) || preco <= 0) {
+        throw new Error(`Preço inválido para ingresso: ${ingresso.tipo}`);
+      }
+
+      if (isNaN(quantidade) || quantidade <= 0) {
+        throw new Error(`Quantidade inválida para ingresso: ${ingresso.tipo}`);
+      }
+
+      return {
+        tipo: String(ingresso.tipo).trim(),
+        preco: preco,
+        quantidade: Math.floor(quantidade),
+        vendidos: 0,
+        ativo: true,
+        kit: ingresso.kit ? String(ingresso.kit).trim() : null,
+      };
+    });
+
+    console.log("Dados validados e normalizados:", {
+      nome: dadosValidados.nome,
+      cidade: dadosValidados.cidade,
+      ingressosCount: ingressosParaCriar.length,
+    });
+
     // Criar evento com ingressos
     // O Prisma gerencia a conexão automaticamente, não precisa verificar manualmente
     let evento;
     try {
       evento = await prisma.evento.create({
         data: {
-          nome: dadosValidados.nome,
-          descricao: dadosValidados.descricao || null,
+          nome: String(dadosValidados.nome).trim(),
+          descricao: dadosValidados.descricao ? String(dadosValidados.descricao).trim() : null,
           data: dataEvento,
-          local: dadosValidados.local,
-          cidade: dadosValidados.cidade,
-          imagemUrl: dadosValidados.imagemUrl || null,
+          local: String(dadosValidados.local).trim(),
+          cidade: String(dadosValidados.cidade).trim(),
+          imagemUrl: dadosValidados.imagemUrl ? String(dadosValidados.imagemUrl).trim() : null,
           ativo: true,
           ingressos: {
-            create: dadosValidados.ingressos.map((ingresso) => ({
-              tipo: ingresso.tipo,
-              preco: ingresso.preco,
-              quantidade: ingresso.quantidade,
-              vendidos: 0,
-              ativo: true,
-              kit: ingresso.kit || null,
-            })),
+            create: ingressosParaCriar,
           },
         },
         include: {
@@ -145,12 +188,16 @@ export async function POST(request: NextRequest) {
       });
     } catch (dbError: any) {
       console.error("Erro ao criar evento no banco:", dbError);
+      console.error("Código do erro:", dbError?.code);
+      console.error("Mensagem do erro:", dbError?.message);
+      console.error("Meta do erro:", dbError?.meta);
       console.error("Dados que causaram erro:", {
         nome: dadosValidados.nome,
         data: dadosValidados.data,
         local: dadosValidados.local,
         cidade: dadosValidados.cidade,
         ingressosCount: dadosValidados.ingressos.length,
+        ingressos: ingressosParaCriar,
       });
       
       // Re-throw para ser capturado pelo catch externo
@@ -186,12 +233,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Erro de validação Zod
-    if (error?.name === "ZodError") {
+    if (error?.name === "ZodError" || error?.issues) {
       return NextResponse.json(
         {
           error: "Dados inválidos",
-          details: error.errors,
+          details: error.errors || error.issues,
           message: "Verifique os dados do formulário",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Erro de tipo de dados (preco/quantidade inválidos)
+    if (error?.message?.includes("inválido") || error?.message?.includes("Preço") || error?.message?.includes("Quantidade")) {
+      return NextResponse.json(
+        {
+          error: "Dados de ingresso inválidos",
+          message: error.message,
         },
         { status: 400 }
       );
@@ -242,9 +300,64 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Já existe um evento com esses dados",
-          message: error?.meta?.target || "Dados duplicados",
+          message: error?.meta?.target ? `Campo duplicado: ${error.meta.target.join(", ")}` : "Dados duplicados",
         },
         { status: 409 }
+      );
+    }
+
+    // Erro de valor inválido
+    if (error?.code === "P2003") {
+      return NextResponse.json(
+        {
+          error: "Erro de referência",
+          message: error?.meta?.field_name 
+            ? `Campo inválido: ${error.meta.field_name}`
+            : "Referência inválida no banco de dados",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Erro de valor nulo em campo obrigatório
+    if (error?.code === "P2011") {
+      return NextResponse.json(
+        {
+          error: "Campo obrigatório ausente",
+          message: error?.meta?.target 
+            ? `Campo obrigatório não fornecido: ${error.meta.target}`
+            : "Alguns campos obrigatórios não foram fornecidos",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Erro de valor inválido para tipo
+    if (error?.code === "P2009") {
+      return NextResponse.json(
+        {
+          error: "Tipo de dado inválido",
+          message: "Alguns dados estão em formato incorreto",
+          details: error?.meta,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Outros erros do Prisma
+    if (error?.code?.startsWith("P")) {
+      console.error("Erro do Prisma não tratado:", {
+        code: error.code,
+        message: error.message,
+        meta: error.meta,
+      });
+      return NextResponse.json(
+        {
+          error: "Erro no banco de dados",
+          message: error?.message || "Erro ao processar dados no banco",
+          code: error?.code,
+        },
+        { status: 500 }
       );
     }
 
@@ -255,6 +368,7 @@ export async function POST(request: NextRequest) {
         message: error?.message || "Erro desconhecido. Tente novamente.",
         details:
           process.env.NODE_ENV === "development" ? error?.stack : undefined,
+        code: error?.code,
       },
       { status: 500 }
     );
