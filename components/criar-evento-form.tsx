@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Plus, Trash2, X } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 interface CriarEventoFormProps {
   open: boolean;
@@ -46,6 +47,8 @@ export function CriarEventoForm({
     handleSubmit,
     control,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<EventoInput>({
     resolver: zodResolver(eventoSchema),
@@ -274,19 +277,27 @@ export function CriarEventoForm({
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="imagemUrl">URL da Imagem (opcional)</Label>
-                  <Input
-                    id="imagemUrl"
-                    type="url"
-                    {...register("imagemUrl")}
-                    placeholder="https://exemplo.com/imagem.jpg"
-                    className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  <ImageUpload
+                    value={watch("imagemUrl")}
+                    onChange={(url) => {
+                      setValue("imagemUrl", url, { shouldValidate: true });
+                    }}
+                    label="Imagem do Evento (opcional)"
+                    maxSizeMB={5}
+                    maxWidth={1920}
+                    maxHeight={1080}
                   />
                   {errors.imagemUrl && (
                     <p className="text-sm text-red-500">
                       {errors.imagemUrl.message}
                     </p>
                   )}
+                  {/* Campo oculto para manter compatibilidade com o schema */}
+                  <Input
+                    id="imagemUrl"
+                    type="hidden"
+                    {...register("imagemUrl")}
+                  />
                 </div>
 
                 <div className="space-y-2 md:col-span-2">

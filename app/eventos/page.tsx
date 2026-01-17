@@ -43,18 +43,7 @@ export default async function EventosPage() {
   return (
     <main className="flex flex-col flex-1 bg-gradient-to-b from-purple-50 via-pink-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
       <Navbar />
-      <div className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-6">
-          <Link href="/">
-            <Button
-              variant="outline"
-              className="group dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              Voltar
-            </Button>
-          </Link>
-        </div>
+      <div className="flex-1 w-full">
         <EventosList eventos={eventos} />
       </div>
       <Footer />

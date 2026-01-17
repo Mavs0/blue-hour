@@ -5,7 +5,7 @@ export function gerarCodigoPix(valor: number, codigoVenda: string): string {
   // Em produção, integrar com gateway de pagamento real
   const chavePix = "janaina.albuquerque975@gmail.com";
   const valorFormatado = valor.toFixed(2).replace(".", ",");
-  return `00020126580014BR.GOV.BCB.PIX0136${chavePix}5204000053039865802BR5909BLUE HOUR6009SAO PAULO62070503***6304${codigoVenda}`;
+  return `00020126540014BR.GOV.BCB.PIX0132janaina.albuquerque975@gmail.com5204000053039865802BR5901N6001C62070503***63042F8F${codigoVenda}`;
 }
 
 export function gerarCodigoBarras(valor: number, vencimento: Date): string {

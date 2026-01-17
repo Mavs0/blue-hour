@@ -9,6 +9,11 @@ import {
   criarNotificacaoPagamentoPendente,
   criarNotificacaoAdminCompra,
 } from "@/lib/notificacoes";
+import {
+  enviarEmailConfirmacaoCompra,
+  enviarEmailInstrucoesPix,
+  enviarEmailConfirmacaoPagamento,
+} from "@/lib/email";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { sanitizeString } from "@/lib/sanitize";
 import { randomBytes } from "crypto";
@@ -261,6 +266,50 @@ export async function POST(request: NextRequest) {
           codigo,
           dadosValidados.formaPagamento || "pix"
         );
+
+        // Enviar email de confirmação de compra e pagamento
+        try {
+          console.log(
+            `📧 Enviando emails de confirmação para ${cliente.email}...`
+          );
+
+          await enviarEmailConfirmacaoCompra(
+            cliente.email,
+            cliente.nome,
+            codigo,
+            evento.nome,
+            ingresso.tipo,
+            dadosValidados.quantidade,
+            valorTotal,
+            evento.data,
+            evento.local,
+            evento.cidade
+          );
+          console.log(
+            `✅ Email de confirmação de compra enviado para ${cliente.email}`
+          );
+
+          await enviarEmailConfirmacaoPagamento(
+            cliente.email,
+            cliente.nome,
+            codigo,
+            evento.nome,
+            ingresso.tipo,
+            dadosValidados.quantidade,
+            valorTotal,
+            evento.data,
+            evento.local,
+            evento.cidade,
+            dadosValidados.formaPagamento || "pix"
+          );
+          console.log(
+            `✅ Email de confirmação de pagamento enviado para ${cliente.email}`
+          );
+        } catch (emailError: any) {
+          console.error("❌ Erro ao enviar email:", emailError);
+          console.error("   Detalhes:", emailError.message || emailError);
+          // Não falhar a compra se houver erro ao enviar email
+        }
       } else {
         // Pagamento pendente (PIX) - criar notificação de compra e pagamento pendente
         await criarNotificacaoCompra(cliente.id, codigo, evento.nome);
@@ -269,6 +318,69 @@ export async function POST(request: NextRequest) {
           codigo,
           dadosValidados.formaPagamento || "pix"
         );
+
+        // Enviar email de confirmação de compra, instruções PIX e confirmação de pagamento pendente
+        try {
+          console.log(
+            `📧 Enviando emails para compra pendente (PIX) para ${cliente.email}...`
+          );
+
+          await enviarEmailConfirmacaoCompra(
+            cliente.email,
+            cliente.nome,
+            codigo,
+            evento.nome,
+            ingresso.tipo,
+            dadosValidados.quantidade,
+            valorTotal,
+            evento.data,
+            evento.local,
+            evento.cidade
+          );
+          console.log(
+            `✅ Email de confirmação de compra enviado para ${cliente.email}`
+          );
+
+          // Extrair QR Code base64 se existir
+          const qrCodeBase64 = qrCodePix?.includes("|")
+            ? qrCodePix.split("|")[1]
+            : undefined;
+
+          await enviarEmailInstrucoesPix(
+            cliente.email,
+            cliente.nome,
+            codigo,
+            evento.nome,
+            valorTotal,
+            codigoPagamento || "",
+            qrCodeBase64
+          );
+          console.log(
+            `✅ Email com instruções PIX enviado para ${cliente.email}`
+          );
+
+          // Enviar email de confirmação de pagamento (mesmo pendente)
+          await enviarEmailConfirmacaoPagamento(
+            cliente.email,
+            cliente.nome,
+            codigo,
+            evento.nome,
+            ingresso.tipo,
+            dadosValidados.quantidade,
+            valorTotal,
+            evento.data,
+            evento.local,
+            evento.cidade,
+            dadosValidados.formaPagamento || "pix"
+          );
+          console.log(
+            `✅ Email de confirmação de pagamento (pendente) enviado para ${cliente.email}`
+          );
+        } catch (emailError: any) {
+          console.error("❌ Erro ao enviar email:", emailError);
+          console.error("   Detalhes:", emailError.message || emailError);
+          // Não falhar a compra se houver erro ao enviar email
+        }
       }
 
       // Criar notificação administrativa para todos os admins

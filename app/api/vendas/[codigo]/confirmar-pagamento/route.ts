@@ -4,6 +4,7 @@ import {
   criarNotificacaoPagamento,
   criarNotificacaoPagamentoExpirado,
 } from "@/lib/notificacoes";
+import { enviarEmailConfirmacaoPagamento } from "@/lib/email";
 
 // Forçar rota dinâmica para evitar coleta de dados estáticos durante o build
 export const dynamic = "force-dynamic";
@@ -83,7 +84,7 @@ export async function POST(
       });
     }
 
-    // Criar notificações
+    // Criar notificações e enviar emails
     try {
       if (status === "confirmado") {
         await criarNotificacaoPagamento(
@@ -91,6 +92,34 @@ export async function POST(
           codigo,
           venda.formaPagamento
         );
+
+        // Enviar email de confirmação de pagamento
+        try {
+          console.log(
+            `📧 Enviando email de confirmação de pagamento para ${venda.cliente.email}...`
+          );
+          await enviarEmailConfirmacaoPagamento(
+            venda.cliente.email,
+            venda.cliente.nome,
+            codigo,
+            venda.ingresso.evento.nome,
+            venda.ingresso.tipo,
+            venda.quantidade,
+            venda.valorTotal,
+            venda.ingresso.evento.data,
+            venda.ingresso.evento.local,
+            venda.ingresso.evento.cidade,
+            venda.formaPagamento
+          );
+          console.log(
+            `✅ Email de confirmação enviado com sucesso para ${venda.cliente.email}`
+          );
+        } catch (emailError: any) {
+          console.error("❌ Erro ao enviar email de confirmação:", emailError);
+          console.error("   Detalhes:", emailError.message || emailError);
+          // Não falhar a atualização se houver erro ao enviar email
+          // Mas logar o erro para debug
+        }
       } else if (status === "expirado") {
         await criarNotificacaoPagamentoExpirado(venda.clienteId, codigo);
       }

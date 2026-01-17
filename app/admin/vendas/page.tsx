@@ -31,6 +31,7 @@ import {
   XCircle,
   AlertCircle,
   Eye,
+  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -39,6 +40,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AdminLoading } from "@/components/admin/admin-loading";
+import { VendaDetalhesModal } from "@/components/admin/vendas/venda-detalhes-modal";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Venda = {
   id: string;
@@ -85,13 +88,24 @@ export default function AdminVendasPage() {
   const [vendas, setVendas] = useState<Venda[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedVenda, setSelectedVenda] = useState<Venda | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [filterMode, setFilterMode] = useState<"AND" | "OR">("AND");
+  const [activeTab, setActiveTab] = useState("basico");
   const [filters, setFilters] = useState({
     status: "",
     statusPagamento: "",
     formaPagamento: "",
     codigo: "",
     clienteNome: "",
+    clienteEmail: "",
+    clienteCPF: "",
     eventoId: "",
+    eventoNome: "",
+    dataInicio: "",
+    dataFim: "",
+    valorMin: "",
+    valorMax: "",
   });
   const [pagination, setPagination] = useState({
     page: 1,
@@ -112,7 +126,16 @@ export default function AdminVendasPage() {
       if (filters.codigo) params.append("codigo", filters.codigo);
       if (filters.clienteNome)
         params.append("clienteNome", filters.clienteNome);
+      if (filters.clienteEmail)
+        params.append("clienteEmail", filters.clienteEmail);
+      if (filters.clienteCPF) params.append("clienteCPF", filters.clienteCPF);
       if (filters.eventoId) params.append("eventoId", filters.eventoId);
+      if (filters.eventoNome) params.append("eventoNome", filters.eventoNome);
+      if (filters.dataInicio) params.append("dataInicio", filters.dataInicio);
+      if (filters.dataFim) params.append("dataFim", filters.dataFim);
+      if (filters.valorMin) params.append("valorMin", filters.valorMin);
+      if (filters.valorMax) params.append("valorMax", filters.valorMax);
+      params.append("filterMode", filterMode);
       params.append("page", pagination.page.toString());
       params.append("limit", pagination.limit.toString());
 
@@ -195,16 +218,78 @@ export default function AdminVendasPage() {
     return formas[forma] || forma;
   };
 
+  const exportarRelatorio = () => {
+    if (vendas.length === 0) return;
+
+    const csvLines = [
+      "Relatório de Vendas - Blue Hour",
+      `Data de Exportação: ${new Date().toLocaleDateString("pt-BR")}`,
+      `Total de Vendas: ${pagination.total}`,
+      `Filtros Aplicados: ${
+        Object.entries(filters).filter(([_, v]) => v).length > 0 ? "Sim" : "Não"
+      }`,
+      "",
+      "Dados das Vendas",
+      "Código,Cliente,Email,Telefone,CPF,Evento,Ingresso,Quantidade,Valor Unitário,Valor Total,Forma Pagamento,Status Pagamento,Data Criação,Data Atualização",
+      ...vendas.map((venda) => {
+        const linha = [
+          venda.codigo,
+          `"${venda.cliente.nome}"`,
+          venda.cliente.email,
+          venda.cliente.telefone || "",
+          venda.cliente.cpf || "",
+          `"${venda.ingresso.evento.nome}"`,
+          `"${venda.ingresso.tipo}"`,
+          venda.quantidade.toString(),
+          venda.ingresso.preco.toFixed(2).replace(".", ","),
+          venda.valorTotal.toFixed(2).replace(".", ","),
+          getFormaPagamentoLabel(venda.formaPagamento),
+          venda.statusPagamento,
+          formatarData(venda.createdAt),
+          formatarData(venda.updatedAt),
+        ];
+        return linha.join(",");
+      }),
+    ];
+
+    const csv = csvLines.join("\n");
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `relatorio-vendas-${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Gerenciar Vendas
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Visualize e gerencie todas as vendas realizadas
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Gerenciar Vendas
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Visualize e gerencie todas as vendas realizadas
+          </p>
+        </div>
+        <Button
+          onClick={exportarRelatorio}
+          variant="outline"
+          className="dark:border-gray-700 dark:text-gray-300"
+          disabled={vendas.length === 0}
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Exportar CSV
+        </Button>
       </div>
 
       {/* Estatísticas */}
@@ -291,37 +376,214 @@ export default function AdminVendasPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Buscar por Código
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder="Ex: BLUE-1234"
-                  value={filters.codigo}
-                  onChange={(e) =>
-                    setFilters({ ...filters, codigo: e.target.value })
-                  }
-                  className="pl-9"
-                />
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList>
+              <TabsTrigger value="basico">Filtros Básicos</TabsTrigger>
+              <TabsTrigger value="avancado">Filtros Avançados</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="basico">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Buscar por Código
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      placeholder="Ex: BLUE-1234"
+                      value={filters.codigo}
+                      onChange={(e) =>
+                        setFilters({ ...filters, codigo: e.target.value })
+                      }
+                      className="pl-9 dark:bg-gray-800 dark:border-gray-700"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Buscar por Cliente
+                  </label>
+                  <Input
+                    placeholder="Nome do cliente"
+                    value={filters.clienteNome}
+                    onChange={(e) =>
+                      setFilters({ ...filters, clienteNome: e.target.value })
+                    }
+                    className="dark:bg-gray-800 dark:border-gray-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Status do Pagamento
+                  </label>
+                  <Select
+                    value={filters.statusPagamento || "all"}
+                    onValueChange={(value) =>
+                      setFilters({
+                        ...filters,
+                        statusPagamento: value === "all" ? "" : value,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700">
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="confirmado">Confirmado</SelectItem>
+                      <SelectItem value="expirado">Expirado</SelectItem>
+                      <SelectItem value="cancelado">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Forma de Pagamento
+                  </label>
+                  <Select
+                    value={filters.formaPagamento || "all"}
+                    onValueChange={(value) =>
+                      setFilters({
+                        ...filters,
+                        formaPagamento: value === "all" ? "" : value,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700">
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="pix">PIX</SelectItem>
+                      <SelectItem value="cartao_credito">
+                        Cartão de Crédito
+                      </SelectItem>
+                      <SelectItem value="cartao_debito">
+                        Cartão de Débito
+                      </SelectItem>
+                      <SelectItem value="boleto">Boleto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
+            </TabsContent>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Buscar por Cliente
-              </label>
-              <Input
-                placeholder="Nome do cliente"
-                value={filters.clienteNome}
-                onChange={(e) =>
-                  setFilters({ ...filters, clienteNome: e.target.value })
-                }
-              />
-            </div>
+            <TabsContent value="avancado">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Email do Cliente
+                  </label>
+                  <Input
+                    type="email"
+                    placeholder="email@exemplo.com"
+                    value={filters.clienteEmail}
+                    onChange={(e) =>
+                      setFilters({ ...filters, clienteEmail: e.target.value })
+                    }
+                    className="dark:bg-gray-800 dark:border-gray-700"
+                  />
+                </div>
 
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    CPF do Cliente
+                  </label>
+                  <Input
+                    placeholder="000.000.000-00"
+                    value={filters.clienteCPF}
+                    onChange={(e) =>
+                      setFilters({ ...filters, clienteCPF: e.target.value })
+                    }
+                    className="dark:bg-gray-800 dark:border-gray-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Nome do Evento
+                  </label>
+                  <Input
+                    placeholder="Nome do evento"
+                    value={filters.eventoNome}
+                    onChange={(e) =>
+                      setFilters({ ...filters, eventoNome: e.target.value })
+                    }
+                    className="dark:bg-gray-800 dark:border-gray-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Data Início
+                  </label>
+                  <Input
+                    type="date"
+                    value={filters.dataInicio}
+                    onChange={(e) =>
+                      setFilters({ ...filters, dataInicio: e.target.value })
+                    }
+                    className="dark:bg-gray-800 dark:border-gray-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Data Fim
+                  </label>
+                  <Input
+                    type="date"
+                    value={filters.dataFim}
+                    onChange={(e) =>
+                      setFilters({ ...filters, dataFim: e.target.value })
+                    }
+                    className="dark:bg-gray-800 dark:border-gray-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Valor Mínimo (R$)
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={filters.valorMin}
+                    onChange={(e) =>
+                      setFilters({ ...filters, valorMin: e.target.value })
+                    }
+                    className="dark:bg-gray-800 dark:border-gray-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Valor Máximo (R$)
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="9999.99"
+                    value={filters.valorMax}
+                    onChange={(e) =>
+                      setFilters({ ...filters, valorMax: e.target.value })
+                    }
+                    className="dark:bg-gray-800 dark:border-gray-700"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="mt-4 flex gap-2 flex-wrap">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 Status do Pagamento
@@ -393,13 +655,33 @@ export default function AdminVendasPage() {
                   formaPagamento: "",
                   codigo: "",
                   clienteNome: "",
+                  clienteEmail: "",
+                  clienteCPF: "",
                   eventoId: "",
+                  eventoNome: "",
+                  dataInicio: "",
+                  dataFim: "",
+                  valorMin: "",
+                  valorMax: "",
                 });
                 setPagination({ ...pagination, page: 1 });
+                setActiveTab("basico");
               }}
             >
               Limpar Filtros
             </Button>
+            <Select
+              value={filterMode}
+              onValueChange={(v: "AND" | "OR") => setFilterMode(v)}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="AND">E (AND)</SelectItem>
+                <SelectItem value="OR">OU (OR)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -503,52 +785,17 @@ export default function AdminVendasPage() {
                           </div>
                         </div>
 
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Eye className="w-4 h-4 mr-2" />
-                              Ver Detalhes
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-64">
-                            <div className="p-3 space-y-2">
-                              <div className="text-xs">
-                                <div className="font-semibold mb-1">
-                                  Informações:
-                                </div>
-                                <div className="space-y-1 text-gray-600">
-                                  <div>
-                                    <span className="font-medium">Código:</span>{" "}
-                                    {venda.codigo}
-                                  </div>
-                                  {venda.codigoPagamento && (
-                                    <div>
-                                      <span className="font-medium">
-                                        Código Pagamento:
-                                      </span>{" "}
-                                      {venda.codigoPagamento.substring(0, 20)}
-                                      ...
-                                    </div>
-                                  )}
-                                  {venda.cliente.telefone && (
-                                    <div>
-                                      <span className="font-medium">
-                                        Telefone:
-                                      </span>{" "}
-                                      {venda.cliente.telefone}
-                                    </div>
-                                  )}
-                                  {venda.cliente.cpf && (
-                                    <div>
-                                      <span className="font-medium">CPF:</span>{" "}
-                                      {venda.cliente.cpf}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedVenda(venda);
+                            setModalOpen(true);
+                          }}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Ver Detalhes
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -589,6 +836,13 @@ export default function AdminVendasPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Detalhes */}
+      <VendaDetalhesModal
+        venda={selectedVenda}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
     </div>
   );
 }
