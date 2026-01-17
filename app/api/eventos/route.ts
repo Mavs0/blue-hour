@@ -53,10 +53,47 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (jsonError: any) {
+      console.error("Erro ao fazer parse do JSON:", jsonError);
+      return NextResponse.json(
+        {
+          error: "Formato de dados inválido",
+          message: "O corpo da requisição deve ser um JSON válido",
+          details: jsonError?.message,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validar se body não está vazio
+    if (!body || Object.keys(body).length === 0) {
+      return NextResponse.json(
+        {
+          error: "Dados não fornecidos",
+          message: "O corpo da requisição está vazio",
+        },
+        { status: 400 }
+      );
+    }
 
     // Validar dados
-    const dadosValidados = eventoSchema.parse(body);
+    let dadosValidados;
+    try {
+      dadosValidados = eventoSchema.parse(body);
+    } catch (validationError: any) {
+      console.error("Erro de validação:", validationError);
+      return NextResponse.json(
+        {
+          error: "Dados inválidos",
+          details: validationError.errors || validationError.issues,
+          message: "Verifique os dados do formulário",
+        },
+        { status: 400 }
+      );
+    }
 
     // Verificar se há ingressos
     if (!dadosValidados.ingressos || dadosValidados.ingressos.length === 0) {
@@ -66,31 +103,73 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validar data antes de criar
+    const dataEvento = new Date(dadosValidados.data);
+    if (isNaN(dataEvento.getTime())) {
+      return NextResponse.json(
+        {
+          error: "Data inválida",
+          message: "A data do evento é inválida",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Verificar conexão com banco antes de criar
+    try {
+      await prisma.$connect();
+    } catch (connectError: any) {
+      console.error("Erro ao conectar com banco:", connectError);
+      return NextResponse.json(
+        {
+          error: "Erro de conexão com banco de dados",
+          message: "Não foi possível conectar ao banco de dados",
+          details: process.env.NODE_ENV === "development" ? connectError?.message : undefined,
+        },
+        { status: 503 }
+      );
+    }
+
     // Criar evento com ingressos
-    const evento = await prisma.evento.create({
-      data: {
+    let evento;
+    try {
+      evento = await prisma.evento.create({
+        data: {
+          nome: dadosValidados.nome,
+          descricao: dadosValidados.descricao || null,
+          data: dataEvento,
+          local: dadosValidados.local,
+          cidade: dadosValidados.cidade,
+          imagemUrl: dadosValidados.imagemUrl || null,
+          ativo: true,
+          ingressos: {
+            create: dadosValidados.ingressos.map((ingresso) => ({
+              tipo: ingresso.tipo,
+              preco: ingresso.preco,
+              quantidade: ingresso.quantidade,
+              vendidos: 0,
+              ativo: true,
+              kit: ingresso.kit || null,
+            })),
+          },
+        },
+        include: {
+          ingressos: true,
+        },
+      });
+    } catch (dbError: any) {
+      console.error("Erro ao criar evento no banco:", dbError);
+      console.error("Dados que causaram erro:", {
         nome: dadosValidados.nome,
-        descricao: dadosValidados.descricao || null,
-        data: new Date(dadosValidados.data),
+        data: dadosValidados.data,
         local: dadosValidados.local,
         cidade: dadosValidados.cidade,
-        imagemUrl: dadosValidados.imagemUrl || null,
-        ativo: true,
-        ingressos: {
-          create: dadosValidados.ingressos.map((ingresso) => ({
-            tipo: ingresso.tipo,
-            preco: ingresso.preco,
-            quantidade: ingresso.quantidade,
-            vendidos: 0,
-            ativo: true,
-            kit: ingresso.kit || null,
-          })),
-        },
-      },
-      include: {
-        ingressos: true,
-      },
-    });
+        ingressosCount: dadosValidados.ingressos.length,
+      });
+      
+      // Re-throw para ser capturado pelo catch externo
+      throw dbError;
+    }
 
     return NextResponse.json(
       {
@@ -107,7 +186,18 @@ export async function POST(request: NextRequest) {
       message: error?.message,
       stack: error?.stack,
       cause: error?.cause,
+      meta: error?.meta,
     });
+    
+    // Log adicional para produção
+    if (process.env.NODE_ENV === "production") {
+      console.error("Erro em produção - POST /api/eventos:", {
+        errorName: error?.name,
+        errorCode: error?.code,
+        errorMessage: error?.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     // Erro de validação Zod
     if (error?.name === "ZodError") {
