@@ -46,39 +46,42 @@ interface MesComparativoData {
 
 export function VendasTempoChart({ data }: { data: VendasTempoData[] }) {
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={data}>
+    <ResponsiveContainer width="100%" height={250} className="md:h-[300px]">
+      <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
         <CartesianGrid
           strokeDasharray="3 3"
           className="stroke-gray-200 dark:stroke-gray-700"
         />
         <XAxis
           dataKey="data"
-          className="text-xs"
-          tick={{ fill: "currentColor" }}
+          className="text-[10px] md:text-xs"
+          tick={{ fill: "currentColor", fontSize: 10 }}
           stroke="currentColor"
+          interval="preserveStartEnd"
         />
         <YAxis
-          className="text-xs"
-          tick={{ fill: "currentColor" }}
+          className="text-[10px] md:text-xs"
+          tick={{ fill: "currentColor", fontSize: 10 }}
           stroke="currentColor"
+          width={50}
         />
         <Tooltip
           contentStyle={{
             backgroundColor: "rgba(255, 255, 255, 0.95)",
             border: "1px solid #e5e7eb",
             borderRadius: "8px",
+            fontSize: "12px",
           }}
-          labelStyle={{ color: "#111827", fontWeight: "bold" }}
+          labelStyle={{ color: "#111827", fontWeight: "bold", fontSize: "12px" }}
         />
-        <Legend />
+        <Legend wrapperStyle={{ fontSize: "12px" }} />
         <Line
           type="monotone"
           dataKey="vendas"
           stroke="#3b82f6"
           strokeWidth={2}
           name="Ingressos Vendidos"
-          dot={{ r: 4 }}
+          dot={{ r: 3 }}
         />
         <Line
           type="monotone"
@@ -86,7 +89,7 @@ export function VendasTempoChart({ data }: { data: VendasTempoData[] }) {
           stroke="#ec4899"
           strokeWidth={2}
           name="Receita (R$)"
-          dot={{ r: 4 }}
+          dot={{ r: 3 }}
         />
       </LineChart>
     </ResponsiveContainer>
@@ -95,8 +98,8 @@ export function VendasTempoChart({ data }: { data: VendasTempoData[] }) {
 
 export function EventosVendasChart({ data }: { data: EventoVendasData[] }) {
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data}>
+    <ResponsiveContainer width="100%" height={300} className="md:h-[350px]">
+      <BarChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 60 }}>
         <CartesianGrid
           strokeDasharray="3 3"
           className="stroke-gray-200 dark:stroke-gray-700"
@@ -105,25 +108,28 @@ export function EventosVendasChart({ data }: { data: EventoVendasData[] }) {
           dataKey="nome"
           angle={-45}
           textAnchor="end"
-          height={100}
-          className="text-xs"
-          tick={{ fill: "currentColor", fontSize: 12 }}
+          height={80}
+          className="text-[10px] md:text-xs"
+          tick={{ fill: "currentColor", fontSize: 10 }}
           stroke="currentColor"
+          interval={0}
         />
         <YAxis
-          className="text-xs"
-          tick={{ fill: "currentColor" }}
+          className="text-[10px] md:text-xs"
+          tick={{ fill: "currentColor", fontSize: 10 }}
           stroke="currentColor"
+          width={50}
         />
         <Tooltip
           contentStyle={{
             backgroundColor: "rgba(255, 255, 255, 0.95)",
             border: "1px solid #e5e7eb",
             borderRadius: "8px",
+            fontSize: "12px",
           }}
-          labelStyle={{ color: "#111827", fontWeight: "bold" }}
+          labelStyle={{ color: "#111827", fontWeight: "bold", fontSize: "12px" }}
         />
-        <Legend />
+        <Legend wrapperStyle={{ fontSize: "12px" }} />
         <Bar
           dataKey="vendas"
           fill="#8b5cf6"
@@ -143,7 +149,7 @@ export function EventosVendasChart({ data }: { data: EventoVendasData[] }) {
 
 export function FormasPagamentoChart({ data }: { data: FormaPagamentoData[] }) {
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={250} className="md:h-[300px]">
       <PieChart>
         <Pie
           data={data}
@@ -153,7 +159,7 @@ export function FormasPagamentoChart({ data }: { data: FormaPagamentoData[] }) {
           label={({ forma, percent }) =>
             `${forma}: ${((percent || 0) * 100).toFixed(0)}%`
           }
-          outerRadius={100}
+          outerRadius={80}
           fill="#8884d8"
           dataKey="quantidade"
         >
@@ -166,9 +172,10 @@ export function FormasPagamentoChart({ data }: { data: FormaPagamentoData[] }) {
             backgroundColor: "rgba(255, 255, 255, 0.95)",
             border: "1px solid #e5e7eb",
             borderRadius: "8px",
+            fontSize: "12px",
           }}
         />
-        <Legend />
+        <Legend wrapperStyle={{ fontSize: "12px" }} />
       </PieChart>
     </ResponsiveContainer>
   );
@@ -180,32 +187,34 @@ export function MesesComparativoChart({
   data: MesComparativoData[];
 }) {
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data}>
+    <ResponsiveContainer width="100%" height={300} className="md:h-[350px]">
+      <BarChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
         <CartesianGrid
           strokeDasharray="3 3"
           className="stroke-gray-200 dark:stroke-gray-700"
         />
         <XAxis
           dataKey="mes"
-          className="text-xs"
-          tick={{ fill: "currentColor" }}
+          className="text-[10px] md:text-xs"
+          tick={{ fill: "currentColor", fontSize: 10 }}
           stroke="currentColor"
         />
         <YAxis
-          className="text-xs"
-          tick={{ fill: "currentColor" }}
+          className="text-[10px] md:text-xs"
+          tick={{ fill: "currentColor", fontSize: 10 }}
           stroke="currentColor"
+          width={50}
         />
         <Tooltip
           contentStyle={{
             backgroundColor: "rgba(255, 255, 255, 0.95)",
             border: "1px solid #e5e7eb",
             borderRadius: "8px",
+            fontSize: "12px",
           }}
-          labelStyle={{ color: "#111827", fontWeight: "bold" }}
+          labelStyle={{ color: "#111827", fontWeight: "bold", fontSize: "12px" }}
         />
-        <Legend />
+        <Legend wrapperStyle={{ fontSize: "12px" }} />
         <Bar
           dataKey="vendas"
           fill="#10b981"
