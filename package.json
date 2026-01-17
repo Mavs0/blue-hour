@@ -4,9 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:tunnel": "echo 'Inicie o ngrok em outro terminal: ngrok http 3000' && next dev",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "clean": "rm -rf .next node_modules/.cache out .next/cache",
+    "clean:all": "rm -rf .next node_modules/.cache out .next/cache && npm run db:generate",
+    "clean:hard": "rm -rf .next node_modules/.cache out .next/cache && lsof -ti:3000 | xargs kill -9 2>/dev/null || true",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
@@ -38,7 +42,8 @@
     "react-hook-form": "^7.49.2",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "recharts": "^2.10.3"
   },
   "devDependencies": {
     "@types/node": "^20",

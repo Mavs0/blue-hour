@@ -1,60 +1,94 @@
 "use client";
 
-import { Ticket, Calendar, Users } from "lucide-react";
+import { Ticket, Calendar, Users, Shield, Zap, Heart } from "lucide-react";
 import { useI18n } from "@/components/providers/i18n-provider";
 
 export function WhySection() {
   const { t } = useI18n();
 
+  const features = [
+    {
+      icon: Ticket,
+      title: t("home.why.tickets.title"),
+      desc: t("home.why.tickets.desc"),
+      color: "purple",
+      gradient: "from-purple-500 to-purple-600",
+    },
+    {
+      icon: Calendar,
+      title: t("home.why.events.title"),
+      desc: t("home.why.events.desc"),
+      color: "pink",
+      gradient: "from-pink-500 to-pink-600",
+    },
+    {
+      icon: Users,
+      title: t("home.why.community.title"),
+      desc: t("home.why.community.desc"),
+      color: "blue",
+      gradient: "from-blue-500 to-blue-600",
+    },
+    {
+      icon: Shield,
+      title: "Pagamento Seguro",
+      desc: "Transações protegidas com criptografia de ponta a ponta",
+      color: "green",
+      gradient: "from-green-500 to-green-600",
+    },
+    {
+      icon: Zap,
+      title: "Confirmação Rápida",
+      desc: "Receba seus ingressos instantaneamente após o pagamento",
+      color: "yellow",
+      gradient: "from-yellow-500 to-yellow-600",
+    },
+    {
+      icon: Heart,
+      title: "Experiência Completa",
+      desc: "Do ingresso à experiência, cuidamos de cada detalhe",
+      color: "red",
+      gradient: "from-red-500 to-red-600",
+    },
+  ];
+
   return (
-    <section className="py-16 bg-gray-50 dark:bg-gray-800">
+    <section className="py-20 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              {t("home.why.title")}
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                {t("home.why.title")}
+              </span>
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               {t("home.why.subtitle")}
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="w-12 h-12 bg-sky-100 dark:bg-sky-900 rounded-lg flex items-center justify-center mb-4">
-                <Ticket className="w-6 h-6 text-sky-600 dark:text-sky-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {t("home.why.tickets.title")}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">
-                {t("home.why.tickets.desc")}
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900 rounded-lg flex items-center justify-center mb-4">
-                <Calendar className="w-6 h-6 text-pink-600 dark:text-pink-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {t("home.why.events.title")}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">
-                {t("home.why.events.desc")}
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {t("home.why.community.title")}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">
-                {t("home.why.community.desc")}
-              </p>
-            </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={index}
+                  className="group relative bg-white dark:bg-gray-800 p-8 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                  style={{
+                    animationDelay: `${index * 100}ms`,
+                  }}
+                >
+                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                    <Icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                    {feature.desc}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

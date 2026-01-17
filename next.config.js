@@ -1,8 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  experimental: {
-    serverComponentsExternalPackages: ["@prisma/client"],
+  // Desabilitar cache do webpack em desenvolvimento se houver problemas
+  webpack: (config, { dev, isServer }) => {
+    if (dev) {
+      // Em caso de problemas com cache, descomente a linha abaixo:
+      // config.cache = false;
+    }
+    return config;
   },
 };
 
