@@ -75,7 +75,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Enviar email para cada cliente
-      for (const { cliente, vendas } of clientesUnicos.values()) {
+      const clientesArray = Array.from(clientesUnicos.values());
+      for (const { cliente, vendas } of clientesArray) {
         // Enviar um email por venda (cada venda pode ter ingressos diferentes)
         for (const venda of vendas) {
           try {

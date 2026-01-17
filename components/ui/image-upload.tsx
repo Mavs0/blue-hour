@@ -41,12 +41,13 @@ export function ImageUpload({
       // Se value foi removido e preview é um blob local, limpar
       setPreview(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
   const MAX_SIZE = maxSizeMB * 1024 * 1024;
 
-  const validateFile = (file: File): string | null => {
+  const validateFile = useCallback((file: File): string | null => {
     // Validar tipo
     if (!ALLOWED_TYPES.includes(file.type)) {
       return `Tipo de arquivo não permitido. Use JPEG, PNG ou WebP.`;
@@ -58,7 +59,7 @@ export function ImageUpload({
     }
 
     return null;
-  };
+  }, [maxSizeMB]);
 
   const resizeImage = (
     file: File,
@@ -184,7 +185,7 @@ export function ImageUpload({
         setUploading(false);
       }
     },
-    [onChange, maxWidth, maxHeight, showError, success]
+    [onChange, maxWidth, maxHeight, showError, success, validateFile]
   );
 
   const handleDrag = useCallback((e: React.DragEvent) => {

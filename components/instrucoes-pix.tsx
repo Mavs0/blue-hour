@@ -58,7 +58,8 @@ export function InstrucoesPix({
         <Card className="p-6 border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
           <CardContent className="p-4">
             {qrCodeBase64 ? (
-              <div className="w-64 h-64 flex items-center justify-center bg-white dark:bg-gray-900 rounded-lg">
+              <div className="w-64 h-64 flex items-center justify-center bg-white dark:bg-gray-900 rounded-lg relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`data:image/png;base64,${qrCodeBase64}`}
                   alt="QR Code PIX"
@@ -78,7 +79,8 @@ export function InstrucoesPix({
               </div>
             ) : (
               // Tentar usar PNG estático da pasta public
-              <div className="w-64 h-64 flex items-center justify-center bg-white dark:bg-gray-900 rounded-lg">
+              <div className="w-64 h-64 flex items-center justify-center bg-white dark:bg-gray-900 rounded-lg relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={qrCodePath}
                   alt="QR Code PIX"
